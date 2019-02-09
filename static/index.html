@@ -15,14 +15,17 @@
 	<meta charset="utf-8">
 	<title>Color Server Main page</title>
     <script type="text/javascript">
+      var startTime = Math.floor(Date.now() / 1000), curPage = 0;
       var json_questions, counter, extra, stabil, lying, answer = {"answers":{}};
 
       function showQuestions(){
-        counter = 0, extra = 0, stabil = 0, lying = 0, answer = {"answers":{}};
+        curPage = 0, counter = 0, extra = 0, stabil = 0, lying = 0, answer = {"answers":{}};
         var head = document.getElementById("head");
         head.appendChild(document.createTextNode(json_questions["desc"]));
         var mainForm = document.getElementById("questionForm");
-        //console.log(data);
+        document.getElementById("button").innerHTML ="Show result";
+        var canvas = document.getElementById('CanvasResult');
+        if(canvas){ canvas.parentNode.removeChild(canvas);}
         var userName = document.getElementById("nameLabel");
         userName.innerText = json_questions["nameLabel"];
         var userDate = document.getElementById("dateLabel");
@@ -107,9 +110,9 @@
   			  .then(response =>{ return response.json();
     			}).then(data=> {
               json_questions = data;
-      				//showQuestions();
+      				showQuestions();
               //showResultSVG();
-               showResultCanvas();
+            //showResultCanvas();
     			}).catch( e => {
     				console.log("fetch went wrong" );
     			})
@@ -118,13 +121,15 @@
   		window.onload = getQuestions;
 
       function showResultCanvas(){
-        console.log("start draw" );
-        extra = 12, stabil = 16, lying = 0;
+        curPage = 1;
+        //console.log("start draw" );
+        //extra = 12, stabil = 16, lying = 0;
         var cardTitle = document.getElementById("cardTitle");
         cardTitle.innerText = json_questions["resultTitle"];
+        document.getElementById("button").innerHTML ="Restart test";
         var mainForm = document.getElementById("questionForm");
         var canvas = document.createElement('canvas');
-        canvas.id = "CursorLayer";
+        canvas.id = "CanvasResult";
         canvas.width = 600;
         canvas.height = 600;
         canvas.style.zIndex = 8;
@@ -176,9 +181,9 @@
         ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
 
         // draw user data
-        console.log(json_questions,json_questions["answers"]["types"][0]);
+        //console.log(json_questions,json_questions["answers"]["types"][0]);
         // draw user data
-        console.log(userPointX,userPointY);
+        //console.log(userPointX,userPointY);
         ctx.beginPath();
         ctx.arc(userPointX, userPointY, userRadius, 0, 2 * Math.PI);
         ctx.fillStyle = "#FF0000";
@@ -186,8 +191,8 @@
       }
 
     function showResultSVG(){
-        console.log("start draw" );
-        extra = 10, stabil = 4, lying = 0;
+        //console.log("start draw" );
+        //extra = 10, stabil = 4, lying = 0;
         var cardTitle = document.getElementById("cardTitle");
         cardTitle.innerText = json_questions["resultTitle"];
         var mainForm = document.getElementById("questionForm");
@@ -230,47 +235,56 @@
       }
 
       function sendForm(){
-        //console.log(mainForm);
-        var userDateInput = document.getElementById("userDate");
-        if(userDateInput.value==""){
-          userDateInput.focus();
-          flag = false;
-          userDateInput.classList.add('is-invalid');
-        }else{
-          userDateInput.classList.remove('is-invalid');
-          //console.log(userDateInput.value.slice(0, 19).replace('T', ' '));
-          answer["date"]=userDateInput.value.slice(0, 19).replace('T', ' ');
-        }
-
-        var userNameInput = document.getElementById("userName");
-        if(userNameInput.value==""){
-          userNameInput.focus();
-          flag = false;
-          userNameInput.classList.add('is-invalid');
-        }else{
-          userNameInput.classList.remove('is-invalid');
-          answer["user"]=userName.value;
-        }
-        console.log("Result: Extraversion="+extra+" Stability="+stabil+" Lying="+lying);
-        if(flag){
-          fetch("putTest", {
-              method : "POST",
-              mode: "cors", // no-cors, cors, *same-origin
-              cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-              credentials: "same-origin", // include, *same-origin, omit
-              headers: {"Content-Type": "text/plain"},
-              //redirect: "/", // manual, *follow, error
-              referrer: "no-referrer", // no-referrer, *client
-              body: JSON.stringify(answer), // body data type must match "Content-Type" header
-            }).
-            then(response => response.text()
-            ).then((body) => {
-                console.log(body);
-                alert(body);
-            //    location.reload();
-            }).catch(error => console.error('Error:', error));
+        if(curPage == 0){
+          //console.log(mainForm);
+          var flag = true;
+          var userDateInput = document.getElementById("userDate");
+          if(userDateInput.value==""){
+            userDateInput.focus();
+            flag = false;
+            userDateInput.classList.add('is-invalid');
+          }else{
+            userDateInput.classList.remove('is-invalid');
+            //console.log(userDateInput.value.slice(0, 19).replace('T', ' '));
+            answer["date"]=userDateInput.value.slice(0, 19).replace('T', ' ');
           }
-          showResult();
+
+          var userNameInput = document.getElementById("userName");
+          if(userNameInput.value==""){
+            userNameInput.focus();
+            flag = false;
+            userNameInput.classList.add('is-invalid');
+          }else{
+            userNameInput.classList.remove('is-invalid');
+            answer["user"]=userName.value;
+          }
+          //console.log("Result: Extraversion="+extra+" Stability="+stabil+" Lying="+lying);
+          if(flag  && counter == 0){
+            answer["testTime"] = Math.floor(Date.now() / 1000)-startTime;
+            answer["result"] = {}
+            answer["result"]["extra"] = extra;
+            answer["result"]["stabil"] = stabil;
+            answer["result"]["lying"] = lying;
+            console.log(answer);
+            fetch("putTest", {
+                method : "POST",
+                mode: "cors", // no-cors, cors, *same-origin
+                cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+                credentials: "same-origin", // include, *same-origin, omit
+                headers: {"Content-Type": "text/plain"},
+                //redirect: "/", // manual, *follow, error
+                referrer: "no-referrer", // no-referrer, *client
+                body: JSON.stringify(answer), // body data type must match "Content-Type" header
+              }).
+              then(response => response.text()
+              ).then((body) => {
+                  console.log(body);
+                  // alert(body);
+                  showResultCanvas();
+              //    location.reload();
+              }).catch(error => console.error('Error:', error));
+            }else {alert("Please fill all fields");}
+          }else{ showQuestions();}
       }
 	</script>
   </head>
@@ -291,9 +305,9 @@
           </div>
         </div>
 
-       <!-- <div class="form-group col-sm-offset-4 col-sm-5">
-         <button type="button" class="btn btn-primary" id="button" onclick="sendForm()">Show result</button>
-       </div> -->
+       <div class="form-group col-sm-offset-4 col-sm-5">
+         <button type="button" class="btn btn-primary" id="button" onclick="sendForm()">Result</button>
+       </div>
        </form>
   </body>
 </html>

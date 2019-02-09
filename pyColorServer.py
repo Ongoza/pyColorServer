@@ -26,6 +26,7 @@ dbPassword = "11"
 dbName = "colors"
 tableData = "user_data"
 tableTest = "test_data"
+root_dir = os.path.dirname(__file__)
 
 #root = os.path.dirname(__file__)
 #static_path=os.path.join(root, 'static')
@@ -83,7 +84,7 @@ class Application(tornado.web.Application):
 		except Exception as e:
 			logging.info("TestDATA Table not exist. Creating...")
 			# CREATE TABLE test_data (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data VARCHAR(255), date datetime, birthDate datetime, PRIMARY KEY (id));
-			self.db.cursor().execute("CREATE TABLE "+tableTest+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data TEXT, date datetime, birthDate date, PRIMARY KEY (id));")
+			self.db.cursor().execute("CREATE TABLE "+tableTest+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data TEXT, result VARCHAR(255), testTime int, date datetime, birthDate date, PRIMARY KEY (id));")
 			logging.info("testDATA Table created")
 	def signal_handler(self, signum, frame):
 		logging.info("exiting...")
@@ -99,12 +100,12 @@ class Application(tornado.web.Application):
 class MainHandler(tornado.web.RequestHandler):
 	def get(self):
 		logging.info('start main=')
-		self.render("static\index.html")
+		self.render(os.path.join("static","index.html"))
 
 class ResultHandler(tornado.web.RequestHandler):
 	def get(self):
 		logging.info('start main=')
-		self.render("static\main.html")
+		self.render(os.path.join("static","main.html"))
 
 class VersionHandler(tornado.web.RequestHandler):
 	def get(self):
@@ -172,16 +173,18 @@ class PutTest(tornado.web.RequestHandler):
 		if json_data:
 			try:
 				strData = tornado.escape.json_encode(json_data["answers"])
+				strResult = tornado.escape.json_encode(json_data["result"])
 				# strData = "test"
 				# logging.info(strData)
 				#time.strftime('%Y-%m-%d %H:%M:%S')
-				insertStatement = "INSERT INTO "+tableTest+" (user,data,date,birthDate) VALUES (%s,%s,%s,%s);"
+				insertStatement = "INSERT INTO "+tableTest+" (user,data,result,testTime,date,birthDate) VALUES (%s,%s,%s,%s,%s,%s);"
 				logging.info(insertStatement)
 				strUser = str(json_data["user"])
 				strDate = str(json_data["date"])
+				strTestTime = json_data["testTime"]
 				strTime = time.strftime('%Y-%m-%d %H:%M:%S')
 				print(tableTest+strUser+strData+strDate+strTime)
-				self.application.db.cursor().execute(insertStatement,(strUser,strData,strTime,strDate))
+				self.application.db.cursor().execute(insertStatement,(strUser,strData,strResult,strTestTime,strTime,strDate))
 			except Exception as e:
 				logging.info("Exeception occured:{}".format(e))
 				self.post_result = "Error parse JSON"
