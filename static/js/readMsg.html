@@ -1,0 +1,69 @@
+<html>
+<head>
+	<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Read Msg page</title>
+  <style>
+    .invalid-feedback	{
+      padding-left:200;
+    }
+  </style>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+  <script type="text/javascript">
+    function readMsg(){
+      var flag = true;
+      var textArea = document.getElementById("customerMsg");
+      var key = document.getElementById("keyMsg");
+      console.log("=="+key.value+"=");
+      if(key.value=="") {
+        console.log("2=="+key.value+"=");
+         flag = false;
+         key.classList.add('is-invalid');
+       }else{key.classList.remove('is-invalid');}
+      if(textArea.value=="") {
+         flag = false;
+         textArea.classList.add('is-invalid');
+       }else{textArea.classList.remove('is-invalid');}
+       if(flag){
+          var transitmessage = textArea.value;
+          console.log(transitmessage);
+          var decrypted = CryptoJS.AES.decrypt(transitmessage,key.value)
+          var readyText = decrypted.toString(CryptoJS.enc.Utf8);
+          console.log("readyText="+readyText+"!=");
+          textArea.value = readyText;
+        }
+    }
+  </script>
+</head>
+<body>
+<div class="container">
+	<legend class="">Sylvernet customer auto payment message</legend>
+<form class="needs-validation" id="register" novalidate="novalidate" >
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Customer information </h5>
+         <div class="form-group row">
+             <label class="control-label col-sm-1" for="keyMsg">Key</label>
+               <input type="text" id="keyMsg" name="keyMsg" required class="col-sm-7 form-control" >
+               <span class="invalid-feedback">Required</span>
+        </div>
+        <div class="form-group row">
+          <label class="control-label col-sm-1"  for="customerMsg">Msg</label>
+          <textarea class="col-sm-7 form-control" id="customerMsg" required name="customerMessage" rows="15"></textarea>
+          <span class="invalid-feedback">Required</span>
+        </div>
+
+      <div class="form-group col-sm-offset-4 col-sm-5">
+        <button type="button" class="btn btn-primary"  onclick="readMsg()">Read</button>
+      </div>
+
+    </div>
+    </div>
+    </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+	<style>
+		  .form-inline {
+		  display: flex;
+		  flex-flow: row wrap;
+		  align-items: center;
+		}
+	</style>
+	<meta charset="utf-8">
+	<title>Color Server Main page</title>
+    <script type="text/javascript">
+      var json_questions, counter, extra, stabil, lying, answer = {"answers":{}};
+
+      function showQuestions(){
+        counter = 0, extra = 0, stabil = 0, lying = 0, answer = {"answers":{}};
+        var head = document.getElementById("head");
+        head.appendChild(document.createTextNode(json_questions["desc"]));
+        var mainForm = document.getElementById("questionForm");
+        //console.log(data);
+        var userName = document.getElementById("nameLabel");
+        userName.innerText = json_questions["nameLabel"];
+        var userDate = document.getElementById("dateLabel");
+        userDate.innerText = json_questions["dateLabel"];
+        var cardTitle = document.getElementById("cardTitle");
+        cardTitle.innerText = json_questions["questionTitle"];
+        var lYes = json_questions["yes"];
+        var lNo = json_questions["no"];
+        //console.log(JSON.stringify(json_quaestions));
+        json_questions["questions"].map(row=>{
+          counter++;
+          var line = document.createElement('div');
+          line.id = "line_"+row[0];
+          line.className = "form-row";
+          line.classList.add('form-control');
+          line.classList.add('h-100');
+          line.classList.add('answer');
+
+          var element0 = document.createElement("Label");
+          element0.type = "label";
+          element0.className = "control-label";
+          element0.innerHTML=row[0]+". "+row[1];
+
+          var lineLabel = document.createElement('div');
+          lineLabel.className = "col-auto";
+          lineLabel.appendChild(element0);
+          line.appendChild(lineLabel);
+
+          var lineRadio = document.createElement('div');
+          lineRadio.className = "form-check-inline";
+
+          var lineRadioBox = document.createElement('div');
+          lineRadioBox.setAttribute("id", "answer_"+row[0]);
+          lineRadioBox.className = "col-auto";
+          lineRadioBox.appendChild(lineRadio);
+          line.appendChild(lineRadioBox);
+
+          var lineRadio2 = document.createElement('div');
+          lineRadio2.className = "form-check-inline";
+          //lineRadio2.classList.add('form-check');
+          lineRadioBox.appendChild(lineRadio2);
+
+          var element1 = document.createElement("INPUT");
+          element1.type = "radio";
+          element1.required = true;
+          element1.className = "form-check-input";
+          element1.id = "input_"+row[0]+"_yes";
+          //element1.name = "input_"+row[0];
+          element1.value = "Yes";
+          element1.setAttribute("name", row[0]);
+          element1.setAttribute("sign", 1);
+          element1.addEventListener('click', function (event) {addResult(event.target)});
+
+          var lblYes = document.createElement("Label");
+          lblYes.className = "form-check-label";
+          lblYes.setAttribute("for", "input_"+row[0]+"_yes");
+          lblYes.appendChild(document.createTextNode(lYes));
+          lineRadio.appendChild(element1);
+          lineRadio.appendChild(lblYes);
+
+          var element2 = document.createElement("INPUT");
+          element2.type = "radio";
+          element2.className = "form-check-input";
+          element2.required = true;
+          element2.setAttribute("name", row[0]);
+          element2.setAttribute("sign", 0);
+          element2.addEventListener('click', function (event) {addResult(event.target)});
+          element2.id = "input_"+row[0]+"_no";
+          //element2.name = "input_"+row[0];
+          var lblNo = document.createElement("Label");
+          lblNo.className = "form-check-label";
+          lblNo.appendChild(document.createTextNode(lNo));
+          lineRadio2.appendChild(element2);
+          lineRadio2.appendChild(lblNo);
+
+          mainForm.appendChild(line);
+        })
+      }
+
+      function getQuestions(){
+  			fetch('js/test_rus2.json')
+  			  .then(response =>{ return response.json();
+    			}).then(data=> {
+              json_questions = data;
+      				//showQuestions();
+              //showResultSVG();
+               showResultCanvas();
+    			}).catch( e => {
+    				console.log("fetch went wrong" );
+    			})
+  		}
+
+  		window.onload = getQuestions;
+
+      function showResultCanvas(){
+        console.log("start draw" );
+        extra = 12, stabil = 16, lying = 0;
+        var cardTitle = document.getElementById("cardTitle");
+        cardTitle.innerText = json_questions["resultTitle"];
+        var mainForm = document.getElementById("questionForm");
+        var canvas = document.createElement('canvas');
+        canvas.id = "CursorLayer";
+        canvas.width = 600;
+        canvas.height = 600;
+        canvas.style.zIndex = 8;
+        //canvas.style.position = "absolute";
+        canvas.style.border = "1px solid";
+        var ctx = canvas.getContext("2d");
+        mainForm.appendChild(canvas);
+        var offset = canvas.height/6, offsetLabel = canvas.height/4.5;
+
+        var width = canvas.width-offset, height = canvas.height-offset ;
+        var radius = height/2, centerX=canvas.width/2, centerY=canvas.height/2;
+        var userRadius = radius*0.05, arraySize = width*0.05, userPointX=canvas.width/24*extra, userPointY=canvas.height/24*(24-stabil);
+        // draw circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = "#AAAAAA";
+        ctx.stroke();
+        // draw coordinate lines
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvas.width, centerY);
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, canvas.height);
+        ctx.strokeStyle = "#0000FF";
+        ctx.stroke();
+        // draw arrays
+         ctx.beginPath();
+        // // X
+        ctx.moveTo(canvas.width, centerY);
+        ctx.lineTo(canvas.width-arraySize, centerY+arraySize/2);
+        ctx.lineTo(canvas.width-arraySize, centerY-arraySize/2);
+        ctx.lineTo(canvas.width, centerY);
+        // // Y
+        ctx.moveTo(centerX,0);
+        ctx.lineTo(centerX - arraySize/2, arraySize);
+        ctx.lineTo(centerX + arraySize/2, arraySize);
+        ctx.lineTo(centerX,0);
+        ctx.fillStyle = "#0000FF";
+        ctx.fill();
+
+        // X,Y title
+        ctx.font = "16px Verdana";
+        ctx.fillText(json_questions["answers"]["types"][0], offsetLabel, offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][1], canvas.width-offsetLabel, offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][2], canvas.width-offsetLabel, canvas.height - offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][3], offsetLabel, canvas.height - offsetLabel);
+        ctx.fillStyle = "#999999";
+        ctx.fillText(json_questions["answers"]["extraмersion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
+        ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
+
+        // draw user data
+        console.log(json_questions,json_questions["answers"]["types"][0]);
+        // draw user data
+        console.log(userPointX,userPointY);
+        ctx.beginPath();
+        ctx.arc(userPointX, userPointY, userRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = "#FF0000";
+        ctx.fill();
+      }
+
+    function showResultSVG(){
+        console.log("start draw" );
+        extra = 10, stabil = 4, lying = 0;
+        var cardTitle = document.getElementById("cardTitle");
+        cardTitle.innerText = json_questions["resultTitle"];
+        var mainForm = document.getElementById("questionForm");
+        var ns = 'http://www.w3.org/2000/svg'
+        var svg = document.createElementNS(ns, 'svg')
+        svg.setAttributeNS(null, 'width', '100%')
+        svg.setAttributeNS(null, 'height', '100%')
+        mainForm.appendChild(svg)
+        var myCircle = document.createElementNS(ns,"circle"); //to create a circle. for rectangle use "rectangle"
+        myCircle.setAttributeNS(null,"id","myCircle");
+        myCircle.setAttributeNS(null,"cx",110);
+        myCircle.setAttributeNS(null,"cy",60);
+        myCircle.setAttributeNS(null,"fill","red");
+        myCircle.setAttributeNS(null,"stroke","black");
+        myCircle.setAttributeNS(null,"stroke-width",3);
+        myCircle.setAttributeNS(null,"r",50);
+        svg.appendChild(myCircle);
+        //document.getElementById("mySVG").appendChild(myCircle)
+        mainForm.appendChild(svg);
+    }
+
+      function addResult(key){
+        var name = key.getAttribute("name");
+        var id = parseInt(name);
+        if(key.getAttribute("sign")=="1"){
+          if(json_questions["answers"]["extraмersion"]["+"].includes(id)){extra++;}
+          if(json_questions["answers"]["neuroticism"]["+"].includes(id)){stabil++;}
+          if(json_questions["answers"]["lying"]["+"].includes(id)){lying++;}
+          answer["answers"][name]=1;
+        }else{
+          if(json_questions["answers"]["extraмersion"]["-"].includes(id)){extra++;}
+          if(json_questions["answers"]["lying"]["-"].includes(id)){lying++;}
+          answer["answers"][name]=0;
+        }
+        var line = document.getElementById("line_"+name);
+        if(line){ line.parentNode.removeChild(line);}
+        //console.log(answer, stabil, lying);
+        counter--;
+        if(counter==0){sendForm();}
+      }
+
+      function sendForm(){
+        //console.log(mainForm);
+        var userDateInput = document.getElementById("userDate");
+        if(userDateInput.value==""){
+          userDateInput.focus();
+          flag = false;
+          userDateInput.classList.add('is-invalid');
+        }else{
+          userDateInput.classList.remove('is-invalid');
+          //console.log(userDateInput.value.slice(0, 19).replace('T', ' '));
+          answer["date"]=userDateInput.value.slice(0, 19).replace('T', ' ');
+        }
+
+        var userNameInput = document.getElementById("userName");
+        if(userNameInput.value==""){
+          userNameInput.focus();
+          flag = false;
+          userNameInput.classList.add('is-invalid');
+        }else{
+          userNameInput.classList.remove('is-invalid');
+          answer["user"]=userName.value;
+        }
+        console.log("Result: Extraversion="+extra+" Stability="+stabil+" Lying="+lying);
+        if(flag){
+          fetch("putTest", {
+              method : "POST",
+              mode: "cors", // no-cors, cors, *same-origin
+              cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+              credentials: "same-origin", // include, *same-origin, omit
+              headers: {"Content-Type": "text/plain"},
+              //redirect: "/", // manual, *follow, error
+              referrer: "no-referrer", // no-referrer, *client
+              body: JSON.stringify(answer), // body data type must match "Content-Type" header
+            }).
+            then(response => response.text()
+            ).then((body) => {
+                console.log(body);
+                alert(body);
+            //    location.reload();
+            }).catch(error => console.error('Error:', error));
+          }
+          showResult();
+      }
+	</script>
+  </head>
+  <body>
+    <h1 id="head"></h1>
+       <form>
+         <div class="form-group row" id="name">
+           <label class="control-label  col-sm-2" for="userName" id = "nameLabel"></label>
+            <input type="text" class="col-sm-3 form-control" id="userName" required >
+            <label class="control-label  col-sm-2" for="userDate" id = "dateLabel"></label>
+             <input type="date" class="col-sm-3 form-control" id="userDate"	required >
+        </div>
+        <div class="card">
+           <h5 class="card-title" id="cardTitle"></h5>
+            <div class="container-fluid">
+             <div class="card-body" id="questionForm">
+           </div>
+          </div>
+        </div>
+
+       <!-- <div class="form-group col-sm-offset-4 col-sm-5">
+         <button type="button" class="btn btn-primary" id="button" onclick="sendForm()">Show result</button>
+       </div> -->
+       </form>
+  </body>
+</html>

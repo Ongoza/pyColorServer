@@ -1,0 +1,242 @@
+<html>
+<head>
+	<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Auto payment start page</title>
+
+	<style>
+		.invalid-feedback	{
+			padding-left:200;
+		}
+		.cc-number.identified {
+		    background-repeat: no-repeat;
+			background-position-y: 3px;
+			background-position-x: 99%;
+		}
+		.one-card > div {
+		    height: 150px;
+		    background-position: center center;
+		    background-repeat: no-repeat;
+		}
+
+		.two-card > div {
+		    height: 80px;
+		    background-position: center center;
+		    background-repeat: no-repeat;
+		    background-size: contain;
+		    width: 48%;
+		}
+		.col-sm-5{
+		  padding-top:9;
+		}
+		.cc-number.visa {
+		    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAeCAYAAABqpJ3BAAAABHNCSVQICAgIfAhkiAAABLhJREFUWIXtmGtMFGcUhp9vdhaWBceyuCjFCwouIBhQ0agYMYKphraoMbZVY9T+0NQ/pbZpE2uTpknTJk1JWnszsdVqrVbTRpNeTDCtqRULoiAW2S1euClQdhfXZYHdYac/djtgtMVWE6Dx/TVzvnO+ed9z+WYyAsDhcCQCJZqm5WuaZmEYQwjhEkKcAIptNluLqKqqSjSbzTVxcXExiqIYZVkeao7/CFVV8Xg8AafT6fX5fNNls9lcEhcXN8pisQxv5mHIsozFYjECMUCJFAwGCxRFGRHkB0JRFGMwGCyQgNjh3jZ3Q5hzrDTURO4XDwUMNR4KGGrc9fhR/6hFddUj0EIGYcAwJh3Zkqz7+Lr9HC+9CEBUVARLCzL59vgF/H6VmOhIlizOACAY1Cgrv0xVTRNt7TcxGCTiraNY/8x8os2R+n7XGju48FszfWoQRYkiPy/9vwuQrdMwRMfT6zhG17ldEPAhRcQQu+EUiFDRDn1dwVsl3wGweeMi5s1J5oXthwBYON/GksUZ3PL2sH7Lbmrrrt/xjFVFOboAd6ePFWs/wNftByDCKFN5cgcREYMf73/rIcxjMGVv4tV9PWzOKsPSXU2f+woGS0pYQDkARtnAuqfm4qhv02OTJ1sBeOf94zr5x/IzKVg0Db9f5Vx1A6OVKN1/38EynTyAP6BSU9vCrOxJgwoYdAamZmZQtHMCbcaZqB2XADhz9gpXGzoAKFyaRfyYUTjqW/tjkscCUHWhUbctL5zBk8uyWFU0izdfW6lnt6cnwIEjZwCYN7u/Rc8PiL0vAXm5NvqCgqd3JdJwtRmAg0fK9fWNa+YDYB9QgalT4gGYmdWfwee27eelHYdpvu6+bf8jRytxd/oAeKV4mV6Zc9UND0ZAmi2BsVaFXhVKjgbocHop/akWCGUszZYAoFdACEFyWMDLzy9j9YrZCCHQNI1j31fx+Or3OP3rZSA04HsO/AJAVuYE0mwJZE+fCMD56gdUAYC83FQAfqxo59P9pwiofQBsWrdA9/n9cqgCiQmP6MNpMhl5Y/tyDu/ZQk52EgDdPX5ef/sYAD+cuEhTiwuAuTlTqHPcYGy8AoCrs4trjc4HJGCBDQBN09j75WkAkpOsLMwN2d2dXXi7egGwpYwLEw3o8dMzxvPhu+sQQgDg84UGdvfnP+s+n+w5SdGanXz1TYVuu5c2uqfP0HlzUjDKBgJqH2o4+xvW5urrN1pv6te2lNAAb9r6GQAZ6Y9ilA2UV15F00LvlcV5aZw5e4WLl1oAiImOJDLSqO/hcnehaRrnqxtZ+cTM+xcQbY4gZ0YSZRWh3rXERrO8cIa+3treLyA1XAFHfSvert47sliwaBrbtxWy9cUvdNvej58lMz1Rv1+1/iNqapuprG7A6fJiMhlve+kNhKirq9NSU1MHFdHh9OJyewFQFDPjwr0K4LnVQ2tbJwATx8dhMhlpanHT0NSB19uLpmmMHh3FlKR4Pe6voTfIBpKTrLc9q7Xdg8fjQwjB5ElWJEkgSeIOTna7/d4FDEfY7faR/zH3UMBQ438hwK2q6lDz+NcIc3ZLkiSVejyeEafA4/EEJEkqlX0+XzFQAIy4X4tAsYCR/XP3T6N8y7XxxywcAAAAAElFTkSuQmCC);
+		}
+		.cc-number.mastercard {
+		    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAeCAYAAABqpJ3BAAAABHNCSVQICAgIfAhkiAAABOFJREFUWIXVmF1MU2cYx3/ncA4t/dRWPhRECU07DKhoYIuZJFomQXAsuzHZsi3Ri+GyZHGZyZxuu+BCb4xemDi3ZDeDRU0Mm86wRYmZeuEEHImT0VKCfPnBV7GlhdLS7uLoxoXA230J/+RcnPR53vf3vH3e532fIwF4vd5s4HgikXAnEgkbi1iSJI1JktQM7Hc6nYNSe3t7tsFguGO3200Wi0VVFOV5M86rWCxGIBCIjo6OToTD4SLFYDAct9vtZpvNtrjJn0hRFGw2mwqYgONyPB4vt1gsSwJ+tiwWixqPx8tlYPliT5tn6Qnzcvl5g/xT/e2lj42M4G9sJHj5MpHeXuLBIEp6OmmFhVh37sRSWYkkz1qf+AwM/AR9P4C/AyaHQDWDeQ1kvwJrX4O09KQ5pM7OzoTL5RJ2iEciPKirY+jECeKh0Jx2OqeTnGPHWFZdDb0X4eYBeOyZe2DFCIUfwObPIEUnxOLxeJILIPrwIb6aGsK3bgnZI0m4vngDEw1i9gDpJVDxPRhWLmjq8XgQ3gMzoRC+qipxeCDFomfoqwYeNQu7wHALNFVBdO5/d7aEAxg8eJDw7dvCHMaS9eS9NYn9JdBnQiIu7Aqjv8Ktj4VMhVIo0tPDb04nxGLCDKkZOlRj5M93XQbk7RF2B0mB3V6w5M1p4vF4xKrQ2JkzyHo9OoeDKY+H1NxcmJkh4vM9G35tLo53+p49WKoVbBtg/HeYGp570uUF0H0Gig/OyyYUQPDqVZbV1JBXX493xw4cFy4w3tiI//x5FJuNsbNnSSsoIK24GOJxrNXVdL//NtZdrzPZ3kZ8IoiavZoMdwrm2gYIdMO9Rgg/AFmnldYVm2CiX1vxmWnYehquv/vvBBAdGMDidjPd349t925iw8NMeb3onU5MZWWYt23DWl3Ng7o6dA4Hkiyz+lQDU11dZHz0KWP19azYu5eZ/lboqodfDoB+Bbj2wJoaWLMLVlfA/Z/BmK1N6r8LoYEF2YQ3cVphIaHWVsxuNxGfjxSTCWtVFXqXi6muLibv3sVYUoIuP5+hkycxl5dj2LCB6P376NetY/DwYe0wG2nTBszaqoGb14IpF7rPgmKAts+hv0kLQEBCAag5OaQVFRFuayPQ1IQuP58Uu53Y6Kj2e2YmweZmDKWlqKtWYdi4kemeHkKtrfjPnUNfUEC4pYVY549QegS2fgk5FTDRBymp2jPcoqVW0Yfwwl7ttDbmLMgmlEKW7dvpra1lqqODRCzG46YmJm7cwLRlC7HxcSRZRl25Em9ZGUpmJgATTV9jfNlNtKeL4aM+CHaiDt6B6/dAVmCoRcv7jtPau78DfN9C5hbtDBjv0IJZQP9ZGc19z4Fe/1eVUq2gzxJ2Fy6jQimky8sjfd++JGaHvlPdPLoMj65oT2wiKXdYVzsv/FMJb+LsI0cwbNokDpBIoOZvxroect8Ek0PcFXsxlB4VMhUOIMVoxHHpEobSUmGOke/aiPAiqcuEXbTLXOUlUI1C5kk1NGpWFq5r18g6dAjZOP8EOqeT/IsXyfnmJlRcAOsCN17FCBs/gVevC91EnyrpfuCpZjc00319zAQC/3tDk3Q/sNiUVD+wWCUD/lgS9X2x6AmzX5Zl+UogEFhyEQQCgagsy1eUcDi8HygHltynRWC/BEv74+4fAxroUkHf2nEAAAAASUVORK5CYII=);
+		}
+	</style>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+	<script type="text/javascript">
+    function validateForm(){
+			var group = $('input,select'), input = null, flag = true, data={};
+			// .filter('[required]')
+	   	for(var i = 0, len = group.length; i < len; i++) {
+	      input = group[i];
+			  //console.log(input.id,input.validity.patternMismatch,input.validity.valueMissing);
+	      if(input.validity.patternMismatch || input.validity.valueMissing && input.required) {
+			 			 	input.classList.add('is-invalid');
+							if(flag){	input.focus(); flag = false;}
+				}else{input.classList.remove('is-invalid');}
+				data[input.id] = input.value;
+			}
+			//console.log("flag=", flag);
+			if(flag){
+				if(document.getElementById("remember").checked){
+					var msg1 = {name:"Hello World"};
+					var msg = "PRIVETSYLVER304";
+					//data = msg1;
+					var msg2 = JSON.stringify(data);
+					var msg3 = CryptoJS.AES.encrypt(msg2,msg).toString();
+					fetch("savedata.php", {
+					    method : "POST",
+							mode: "cors", // no-cors, cors, *same-origin
+			        cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+			        credentials: "same-origin", // include, *same-origin, omit
+			        headers: {"Content-Type": "text/plain"},
+			        //redirect: "/", // manual, *follow, error
+			        referrer: "no-referrer", // no-referrer, *client
+			        body: msg3, // body data type must match "Content-Type" header
+					}).
+					then(response => response.text()
+					).then((body) => {
+					    console.log(body);
+							alert(body);
+							window.location = '/';
+					}).catch(error => console.error('Error:', error));
+				}else{input.classList.add('is-invalid');}
+		    }
+}
+</script>
+</head>
+<body>
+<div class="container">
+	<legend class="">Sylvernet customer auto payment activation page<br>
+	Página de activación del pago automático del cliente de Sylvernet</legend>
+	<form class="needs-validation" id="register"  >
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Customer information / Información al cliente</h5>
+					<!-- Name -->
+					 <div class="form-group row" id="testId" name="">
+					 <label class="control-label  col-sm-3" for="customerName">Customer Name<br>Nombre del cliente</label>
+							 <input type="text" class="col-sm-5 form-control" id="customerName"  name="customerName" 	required 	>
+						   <span class="invalid-feedback">Required / Necesario</span>
+					 </div>
+
+					<!-- Customer Address -->
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="customerAddress">Customer address<br>Dirección del cliente</label>
+							<input type="text" id="customerAddress" name="customerAddress" required class="col-sm-5 form-control" >
+							<span class="invalid-feedback">Required / Necesario</span>
+					</div>
+
+					<!-- Customer Phone -->
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="customerPhone">Customer phone<br>Telefono del cliente</label>
+							<input type="tel" id="customerPhone" name="customerPhone" required class="col-sm-3 form-control" pattern="[0-9.\s\(\)-]{4,15}" maxlength="16" >
+							<span class="invalid-feedback">Required 10 digits/ Necesario 10 dígitos</span>
+					</div>
+
+					<!-- Customer Email -->
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="customerEmail">Customer email<br>Correo electrónico del cliente</label>
+							<input type="email" id="customerEmail" name="customerEmail" class="col-sm-3 form-control" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}" >
+					</div>
+					<!-- Monthly amount -->
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="customerAmount">Monthly payment amount ($)<br>Cantidad de pago mensual($)</label>
+							<input type="number" id="customerAmount" name="customerAmount" required class="col-sm-2 form-control" >
+							<span class="invalid-feedback">Required / Necesario</span>
+					</div>
+
+					<!-- Notice for an operator -->
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="customerMsg">Message for the operator<br>Mensaje para el operador</label>
+						<textarea class="col-sm-5" id="customerMsg" namr="customerMessage" rows="2"></textarea>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-body">
+					<h5 class="card-title">Card owner information / Información del dueño de la tarjeta</h5>
+					<!-- Name -->
+					 <div class="form-group row">
+					 <label class="control-label col-sm-3" for="cardName">Card Holder's Name<br>Nombre del tarjetahabiente</label>
+							 <input type="text" class="col-sm-5 form-control" id="cardName" required name="cardName" >
+							 <span class="invalid-feedback">Required / Necesario</span>
+					 </div>
+						<!-- Card Number -->
+						<div class="form-group row">
+							<label class="control-label col-sm-3" for="cardNumber">Card Number<br>Número de tarjeta</label>
+							<input type="tel" id="cardNumber" name="cardNumber" required class="col-sm-5 form-control cc-number identified visa"  required pattern="[0-9\s]{16,19}" maxlength="19">
+							<span class="invalid-feedback">Enter a 16 digit card number / Ingrese un número de tarjeta de 16 dígitos</span>
+						</div>
+
+						<!-- Expiry-->
+						<div class="form-group row">
+							<label class="control-label col-sm-3 d-inline-block" for="cardExpiry">Card Expiry Date<br>Fecha de expiración de la tarjeta</label>
+								<select class="form-control d-inline-block col-sm-2" required name="cardMonth" id="cardMonth">
+									<option></option>
+									<option value="01">Jan (01)</option>
+									<option value="02">Feb (02)</option>
+									<option value="03">Mar (03)</option>
+									<option value="04">Apr (04)</option>
+									<option value="05">May (05)</option>
+									<option value="06">Jun (06)</option>
+									<option value="07">Jul (07)</option>
+									<option value="08">Aug (08)</option>
+									<option value="09">Sep (09)</option>
+									<option value="10">Oct (10)</option>1
+									<option value="11">Nov (11)</option>
+									<option value="12">Dec (12)</option>
+								</select>
+								<p>&nbsp;&nbsp;</p>
+								<select class="form-control d-inline-block col-sm-2" required name="cardYear" id="cardYear">
+									<option></option>
+									<option value="19">2019</option>
+									<option value="20">2020</option>
+									<option value="21">2021</option>
+									<option value="22">2022</option>
+									<option value="23">2023</option>
+									<option value="24">2024</option>
+									<option value="25">2025</option>
+									<option value="26">2026</option>
+									<option value="27">2027</option>
+									<option value="28">2028</option>
+									<option value="29">2029</option>
+									<option value="30">2030</option>
+									<option value="31">2031</option>
+									<option value="32">2032</option>
+									<option value="33">2033</option>
+								</select>
+								<span class="invalid-feedback">Required. Date under a card number / Necesario. Bajo un numero de tarjeta</span>
+							</div>
+
+
+						<!-- CVV -->
+						<div class="form-group row">
+							<label class="control-label col-sm-3"  for="cardCVV">Card CVV<br>Tarjeta CVV</label>
+								<input type="number" id="cardCVV" name="cardCVV" required class="col-sm-2 form-control" pattern="[0-9]{3}" maxlength="3" >
+								<span class="invalid-feedback">Required. 3 digits on the back side / Necesario. 3 dígitos en la parte posterior</span>
+						</div>
+
+						<!-- Card Owner Address -->
+						<div class="form-group row">
+							<label class="control-label col-sm-3" for="cardZip">Card owner Zip code<br>Código postal del propietario de la tarjeta</label>
+								<input type="number" id="cardZip" name="cardZip" required class="col-sm-2 form-control" pattern="[0-9]{5}" maxlength="5" >
+								<span class="invalid-feedback">Required 5 digits/ Necesario 5 dígitos</span>
+						</div>
+
+						<!-- Card Owner Phone -->
+						<div class="form-group row">
+							<label class="control-label col-sm-3" for="cardPhone">Card owner phone<br>Telefono del dueño de la tarjeta</label>
+								<input type="text" id="cardPhone" name="cardPhone" required class="col-sm-3 form-control" required pattern="[0-9\s]{16,19}" maxlength="19">
+							<span class="invalid-feedback">Required 10 digits/ Necesario 10 dígitos</span>
+						</div>
+
+					</div>
+				</div>
+				<div class="card">
+						<div class="card-body">
+						<h5 class="card-title">Confirmation / Confirmación</h5>
+				<!-- Confirmation checkbox -->
+				 <div class="form-group form-check">
+					 <input id="remember" class="form-check-input" type="checkbox" name="remember" required  >
+					 <span class="invalid-feedback" style="padding-top:-30;padding-left:40">Required / Necesario</span>
+						<label  class="form-check-label" for="remember" >
+								  By clicking on this button I allow to save my data for monthly auto payment and I allow to make monthly payments for Sylvernet service
+								 <br>Al hacer clic en este botón, puedo guardar mis datos para el pago automático mensual y puedo hacer pagos mensuales para el servicio Sylvernet</label>
+
+				 </div>
+
+					 <div class="form-group col-sm-offset-4 col-sm-5">
+						 <button type="button" class="btn btn-primary" onclick="validateForm()">Submit</button>
+					 </div>
+				 <div>
+					 <p>For stopping auto payment or any other payment issues please send a message with customer information to phone (559) 492 9067 or email support@sylvernet.net</p>
+					 <p>Para detener el pago automático o cualquier otro problema de pago, envíe un mensaje con información del cliente al teléfono (559) 492 9067 or email support@sylvernet.net</p>
+				 </div>
+
+			</div>
+			</div>
+
+ 		</form>
+	</div>
+
+  </body>
+</html>
