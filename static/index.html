@@ -5,6 +5,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
 	<style>
 		  .form-inline {
 		  display: flex;
@@ -15,28 +16,44 @@
 	<meta charset="utf-8">
 	<title>Color Server Main page</title>
     <script type="text/javascript">
-      var startTime = Math.floor(Date.now() / 1000), curPage = 0;
-      var json_questions, counter, extra, stabil, lying, answer = {"answers":{}};
-
+      var startTime = Math.floor(Date.now() / 1000), curPage = 0, userLangList = ["ru"];
+      var undoButton, userLang, json_questions, curResult = {"extra":0, "stabil":0, "lying":0, "counter":0}, answer = {"answers":{}}, prevQuestion=[];
+// Add langueges en, pl
       function showQuestions(){
-        curPage = 0, counter = 0, extra = 0, stabil = 0, lying = 0, answer = {"answers":{}};
+        curPage = 0, curResult = {"counter":0, "extra":0, "stabil":0, "lying":0}, answer = {"answers":{}}, prevQuestion=[];
         var head = document.getElementById("head");
-        head.appendChild(document.createTextNode(json_questions["desc"]));
+        head.innerHTML = json_questions["desc"];
         var mainForm = document.getElementById("questionForm");
-        document.getElementById("button").innerHTML ="Show result";
-        var canvas = document.getElementById('CanvasResult');
-        if(canvas){ canvas.parentNode.removeChild(canvas);}
         var userName = document.getElementById("nameLabel");
         userName.innerText = json_questions["nameLabel"];
         var userDate = document.getElementById("dateLabel");
         userDate.innerText = json_questions["dateLabel"];
         var cardTitle = document.getElementById("cardTitle");
         cardTitle.innerText = json_questions["questionTitle"];
+        document.getElementById("button").innerHTML = json_questions["buttonEnd"][0];
+        var canvas = document.getElementById('CanvasResult');
+        if(canvas){ canvas.parentNode.removeChild(canvas);}
+        undoButton = document.createElement('button');
+        undoButton.id = "undoB";
+        undoButton.type = "button";
+        undoButton.setAttribute("disabled", true);
+        undoButton.innerText = json_questions["buttonUndo"];
+        undoButton.className = "btn btn-primary";
+        undoButton.addEventListener('click', function (event) {undoQuestion()});
+        var lineUndo = document.createElement('div');
+        lineUndo.id = "undoButton";
+        lineUndo.style = "padding-right: 100 px"
+        lineUndo.appendChild(undoButton);
+        mainForm.appendChild(lineUndo);
+        var mainFormContainer = document.createElement('div');
+        mainFormContainer.id = "questionFormContainer";
+        mainForm.appendChild(mainFormContainer);
+
         var lYes = json_questions["yes"];
         var lNo = json_questions["no"];
         //console.log(JSON.stringify(json_quaestions));
         json_questions["questions"].map(row=>{
-          counter++;
+          curResult["counter"]++;
           var line = document.createElement('div');
           line.id = "line_"+row[0];
           line.className = "form-row";
@@ -100,45 +117,71 @@
           lblNo.appendChild(document.createTextNode(lNo));
           lineRadio2.appendChild(element2);
           lineRadio2.appendChild(lblNo);
-
-          mainForm.appendChild(line);
+          mainFormContainer.appendChild(line);
         })
       }
 
-      function getQuestions(){
-  			fetch('js/test_rus2.json')
-  			  .then(response =>{ return response.json();
+      function getQuestions(page){
+        if(!userLang){
+          if(userLangList.includes(navigator.language)){
+            userLang = navigator.language;
+          }else{
+            userLang = userLangList[0];
+          }
+        }
+        var json = userLang+".json";
+        // console.log(navigator.language,json);
+  			fetch('js/'+json)
+  			  .then(response =>{
+             //console.log(response);
+            return response.json();
     			}).then(data=> {
               json_questions = data;
-      				showQuestions();
-              //showResultSVG();
-            //showResultCanvas();
+              if(page==0){
+      				 showQuestions();
+             }else{
+               showResultCanvas();
+             }
     			}).catch( e => {
-    				console.log("fetch went wrong" );
+    				console.log(e);
     			})
   		}
 
-  		window.onload = getQuestions;
+      function SwichLang(lang){
+        // console.log(lang);
+        var header = document.getElementById('dropLang');
+        header.innerHTML = '<span class="flag-icon flag-icon-'+lang.toLowerCase()+'"></span>  '+lang+'</a>';
+        userLang = lang.toLowerCase();
+        var mainForm = document.getElementById("questionFormContainer");
+        if(mainForm){mainForm.parentNode.removeChild(mainForm);}
+        var undo = document.getElementById('undoButton');
+        if(undo){ undo.parentNode.removeChild(undo);}
+        var canvas = document.getElementById('CanvasResult');
+        if(canvas){ canvas.parentNode.removeChild(canvas);}
+        getQuestions(curPage);
+      }
 
       function showResultCanvas(){
         curPage = 1;
+        var undo = document.getElementById('undoButton');
+        if(undo){ undo.parentNode.removeChild(undo);}
         //console.log("start draw" );
-        //extra = 12, stabil = 16, lying = 0;
+        var extra = curResult["extra"], stabil = curResult["stabil"];
         var cardTitle = document.getElementById("cardTitle");
         cardTitle.innerText = json_questions["resultTitle"];
-        document.getElementById("button").innerHTML ="Restart test";
+        document.getElementById("button").innerHTML = json_questions["buttonEnd"][1];
         var mainForm = document.getElementById("questionForm");
+        var result = document.createElement('div');
+        result.id = "CanvasResult";
         var canvas = document.createElement('canvas');
-        canvas.id = "CanvasResult";
+        canvas.id = "Canvas";
         canvas.width = 600;
         canvas.height = 600;
         canvas.style.zIndex = 8;
         //canvas.style.position = "absolute";
         canvas.style.border = "1px solid";
         var ctx = canvas.getContext("2d");
-        mainForm.appendChild(canvas);
         var offset = canvas.height/6, offsetLabel = canvas.height/4.5;
-
         var width = canvas.width-offset, height = canvas.height-offset ;
         var radius = height/2, centerX=canvas.width/2, centerY=canvas.height/2;
         var userRadius = radius*0.05, arraySize = width*0.05, userPointX=canvas.width/24*extra, userPointY=canvas.height/24*(24-stabil);
@@ -181,13 +224,23 @@
         ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
 
         // draw user data
-        //console.log(json_questions,json_questions["answers"]["types"][0]);
-        // draw user data
-        //console.log(userPointX,userPointY);
         ctx.beginPath();
         ctx.arc(userPointX, userPointY, userRadius, 0, 2 * Math.PI);
         ctx.fillStyle = "#FF0000";
         ctx.fill();
+        // More information link
+        var a = document.createElement('a');
+        var linkText = document.createTextNode(json_questions["link2label"]);
+        a.appendChild(linkText);
+        //a.title = json_questions["link2label"];
+        a.href = json_questions["link2"];
+        var line = document.createElement('div');
+        line.id = "infoLink";
+        line.style = "padding-left:"+offsetLabel+"px"
+        line.appendChild(a);
+        result.appendChild(canvas);
+        result.appendChild(line);
+        mainForm.appendChild(result);
       }
 
     function showResultSVG(){
@@ -217,21 +270,39 @@
       function addResult(key){
         var name = key.getAttribute("name");
         var id = parseInt(name);
+        var time = Date.now()-startTime;
+        var type;
         if(key.getAttribute("sign")=="1"){
-          if(json_questions["answers"]["extraмersion"]["+"].includes(id)){extra++;}
-          if(json_questions["answers"]["neuroticism"]["+"].includes(id)){stabil++;}
-          if(json_questions["answers"]["lying"]["+"].includes(id)){lying++;}
-          answer["answers"][name]=1;
+          if(json_questions["answers"]["extraмersion"]["+"].includes(id)){ type = "extra"; curResult["extra"]++;}
+          if(json_questions["answers"]["neuroticism"]["+"].includes(id)){type = "stabil"; curResult["stabil"]++;}
+          if(json_questions["answers"]["lying"]["+"].includes(id)){type = "lying"; curResult["lying"]++;}
+          answer["answers"][name]=[1,time];
         }else{
-          if(json_questions["answers"]["extraмersion"]["-"].includes(id)){extra++;}
-          if(json_questions["answers"]["lying"]["-"].includes(id)){lying++;}
-          answer["answers"][name]=0;
+          if(json_questions["answers"]["extraмersion"]["-"].includes(id)){type = "extra"; curResult["extra"]++;}
+          if(json_questions["answers"]["lying"]["-"].includes(id)){type = "lying"; curResult["lying"]++;}
+          answer["answers"][name]=[0,time];
         }
         var line = document.getElementById("line_"+name);
-        if(line){ line.parentNode.removeChild(line);}
+        if(line){
+          line.parentNode.removeChild(line);
+          prevQuestion = [line, type];
+          undoButton.disabled = false;
+        }
         //console.log(answer, stabil, lying);
-        counter--;
-        if(counter==0){sendForm();}
+        curResult["counter"]--;
+        if(curResult["counter"]==0){sendForm();}
+      }
+
+      function undoQuestion(){
+        console.log(curResult);
+        if(prevQuestion.length != 0){
+          var mainForm = document.getElementById("questionFormContainer");
+          mainForm.insertBefore(prevQuestion[0], mainForm.firstChild);
+          curResult["counter"]++;
+          curResult[prevQuestion[1]]--;
+          prevQuestion = [];
+          undoButton.setAttribute("disabled", true);
+        }
       }
 
       function sendForm(){
@@ -259,12 +330,12 @@
             answer["user"]=userName.value;
           }
           //console.log("Result: Extraversion="+extra+" Stability="+stabil+" Lying="+lying);
-          if(flag  && counter == 0){
+          if(flag  && curResult["counter"] == 0){
             answer["testTime"] = Math.floor(Date.now() / 1000)-startTime;
             answer["result"] = {}
-            answer["result"]["extra"] = extra;
-            answer["result"]["stabil"] = stabil;
-            answer["result"]["lying"] = lying;
+            answer["result"]["extra"] = curResult["extra"];
+            answer["result"]["stabil"] = curResult["stabil"];
+            answer["result"]["lying"] = curResult["lying"];
             console.log(answer);
             fetch("putTest", {
                 method : "POST",
@@ -286,12 +357,23 @@
             }else {alert("Please fill all fields");}
           }else{ showQuestions();}
       }
+      window.onload = getQuestions(0);
 	</script>
   </head>
   <body>
     <h1 id="head"></h1>
-       <form>
-         <div class="form-group row" id="name">
+    <div class="dropdown">
+      <a class="dropdown-toggle" id="dropLang" data-toggle="dropdown" href="#" >
+        <span class="flag-icon flag-icon-ru"></span>  Ру</a>
+      <div class="dropdown-menu" aria-labelledby="dropLang">
+          <a class="dropdown-item" href="#" onclick="SwichLang('Ru'); return false;"><span class="flag-icon flag-icon-ru"> </span>  Ru</a>
+          <a class="dropdown-item" href="#" onclick="SwichLang('Ua'); return false;"><span class="flag-icon flag-icon-ua"> </span>  Ua</a>
+          <a class="dropdown-item" href="#" onclick="SwichLang('en'); return false;"><span class="flag-icon flag-icon-us"> </span>  En</a>
+          <a class="dropdown-item" href="#" onclick="SwichLang('pl'); return false;"><span class="flag-icon flag-icon-pl"> </span>  Pl</a>
+      </div>
+    </div>
+    <form>
+       <div class="form-group row" id="name">
            <label class="control-label  col-sm-2" for="userName" id = "nameLabel"></label>
             <input type="text" class="col-sm-3 form-control" id="userName" required >
             <label class="control-label  col-sm-2" for="userDate" id = "dateLabel"></label>
