@@ -30,6 +30,9 @@ root_dir = os.path.dirname(__file__)
 
 #root = os.path.dirname(__file__)
 #static_path=os.path.join(root, 'static')
+# добавить
+# вход с помощью соц сетей
+# девайс пользователя и есть ли установленный софт
 
 class SQLHandler(tornado.web.RequestHandler):
 	def row_to_obj(self, row, cur):
@@ -62,32 +65,35 @@ class SQLHandler(tornado.web.RequestHandler):
 class Application(tornado.web.Application):
 	is_closing = False
 	db = None
+
 	def checkDB(self):
 		try:
 			self.db = pymysql.connect(host=dbServerName, user=dbUser, password=dbPassword, db=dbName,autocommit=True)
-			logging.info("DB OK")
+			logApp.info("DB exist")
 		except Exception as e:
-			logging.info("Exeception DB occured:{}".format(e))
-
+			logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Exeception DB occured:{}".format(e))
+			pass
 		checkUserDataTable = "SELECT COUNT(*) FROM "+tableData+";"
 		try:
 			self.db.cursor().execute(checkUserDataTable)
-			logging.info("DB UserDATA OK")
+			logApp.info("UserData table exist")
 		except Exception as e:
-			logging.info("UserDATA Table not exist. Creating...")
-			self.db.cursor().execute("CREATE TABLE "+tableData+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data MEDIUMTEXT, date datetime, PRIMARY KEY (id));")
-			logging.info("UserDATA Table created")
+			logApp.info("UserData table does not exist. Creating...")
+			self.db.cursor().execute("CREATE TABLE "+tableData+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(70), ip VARCHAR(30), data MEDIUMTEXT, date datetime, PRIMARY KEY (id));")
+			logApp.info("UserData table is created")
+			pass
 		checkUserTestTable = "SELECT COUNT(*)  FROM "+tableTest+";"
 		try:
 			self.db.cursor().execute(checkUserTestTable)
-			logging.info("DB testDATA OK")
+			logApp.info("testData table exist")
 		except Exception as e:
-			logging.info("TestDATA Table not exist. Creating...")
+			logApp.info("TestData table does not exist. Creating...")
 			# CREATE TABLE test_data (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data VARCHAR(255), date datetime, birthDate datetime, PRIMARY KEY (id));
-			self.db.cursor().execute("CREATE TABLE "+tableTest+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data TEXT, result VARCHAR(255), testTime int, date datetime, birthDate date, PRIMARY KEY (id));")
-			logging.info("testDATA Table created")
+			self.db.cursor().execute("CREATE TABLE "+tableTest+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip TEXT, lang VARCHAR(10),data TEXT, testTime int, date datetime, birthDate date, extra tinyint,stabil tinyint,lying tinyint, PRIMARY KEY (id));")
+			logApp.info("testData table is created")
+			pass
 	def signal_handler(self, signum, frame):
-		logging.info("exiting...")
+		logApp.info("exiting...")
 		self.is_closing = True
 
 	def try_exit(self):
@@ -95,22 +101,22 @@ class Application(tornado.web.Application):
 			# clean up here
 			self.db.close()
 			tornado.ioloop.IOLoop.instance().stop()
-			logging.info("exit success")
+			logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
 
 class MainHandler(tornado.web.RequestHandler):
 	def get(self):
-		logging.info('start main=')
+		# logging.info('start main='+self.request.remote_ip)
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'get index')
 		self.render(os.path.join("static","index.html"))
 
 class ResultHandler(tornado.web.RequestHandler):
 	def get(self):
-		logging.info('start main=')
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'get main')
 		self.render(os.path.join("static","main.html"))
 
 class VersionHandler(tornado.web.RequestHandler):
 	def get(self):
-		response = { 'version': '0.0.1',
-			'last_build':  date.today().isoformat() }
+		response = { 'version': '0.0.1', 'last_build':  date.today().isoformat() }
 		self.write(response)
 
 class GetByIdHandler(SQLHandler):
@@ -138,22 +144,22 @@ class PutRecord(tornado.web.RequestHandler):
 		self.post_result = "Json post OK"
 		if self.request.body:
 			try:
-				logging.info(self.request.body)
+				logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.request.body)
 				json_data = tornado.escape.json_decode(self.request.body)
 				#json_data = {"user":"user333","data":"dddddddd fff"}
 			except Exception as e:
-				self.post_result = "Error parse JSON body"
-				logging.info("Exeception body occured:{}".format(e))
+				self.post_result = "Error decode JSON"
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutRecord Json decode Exeception body occured:{}".format(e))
 				pass
 		if json_data:
 			try:
 				#logging.info('start put data to DB')
 				cursorObject = self.application.db.cursor()
 				insertStatement = "INSERT INTO "+tableData+" (user, date, data) VALUES (\""+str(json_data["user"])+"\",\""+time.strftime('%Y-%m-%d %H:%M:%S')+"\",\""+str(json_data["data"])+"\");"
-				logging.info(insertStatement)
+				logApp.info(insertStatement)
 				cursorObject.execute(insertStatement)
 			except Exception as e:
-				logging.info("Exeception occured:{}".format(e))
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutRecord Jsom parse Exeception occured:{}".format(e))
 				self.post_result = "Error parse JSON"
 
 class PutTest(tornado.web.RequestHandler):
@@ -168,33 +174,40 @@ class PutTest(tornado.web.RequestHandler):
 				#json_data = {"user":"user333","data":"dddddddd fff"}
 			except Exception as e:
 				self.post_result = "Error parse JSON body"
-				logging.info("Exeception body occured:{}".format(e))
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
 				pass
 		if json_data:
 			try:
 				strData = tornado.escape.json_encode(json_data["answers"])
-				strResult = tornado.escape.json_encode(json_data["result"])
+				# strResult = tornado.escape.json_encode(json_data["result"])
 				# strData = "test"
 				# logging.info(strData)
 				#time.strftime('%Y-%m-%d %H:%M:%S')
-				insertStatement = "INSERT INTO "+tableTest+" (user,data,result,testTime,date,birthDate) VALUES (%s,%s,%s,%s,%s,%s);"
-				logging.info(insertStatement)
+				insertStatement = "INSERT INTO "+tableTest+" (user,ip,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+insertStatement)
 				strUser = str(json_data["user"])
+				IP = tornado.escape.json_encode(json_data["IP"])
+				Extra = json_data["result"]["extra"]
+				Stabil = json_data["result"]["stabil"]
+				Lying = json_data["result"]["lying"]
+				strLang = str(json_data["lang"])
 				strDate = str(json_data["date"])
 				strTestTime = json_data["testTime"]
 				strTime = time.strftime('%Y-%m-%d %H:%M:%S')
-				print(tableTest+strUser+strData+strDate+strTime)
-				self.application.db.cursor().execute(insertStatement,(strUser,strData,strResult,strTestTime,strTime,strDate))
+				# print(tableTest+strUser+strData+strDate+strTime)
+				self.application.db.cursor().execute(insertStatement,(strUser,IP,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
 			except Exception as e:
-				logging.info("Exeception occured:{}".format(e))
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
 				self.post_result = "Error parse JSON"
 				pass
 	def post(self):
-		logging.info(self.post_result)
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.post_result)
+		# logging.info(self.post_result)
 		self.write(self.post_result)
 	def get(self):
-		logging.info('user try use get method')
-		self.write("You should use a post method!")
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'user try use get method')
+		# logging.info('user try use get method')
+		self.write("Error!")
 
 application = Application([
 	(r"/", MainHandler),
@@ -214,6 +227,32 @@ application = Application([
 
 if __name__ == "__main__":
 	tornado.options.parse_command_line()
+	try:
+		tornado.log.enable_pretty_logging()
+		
+		handler = logging.FileHandler(os.path.join(root_dir,"server.log"))
+		logger = logging.getLogger()
+		logger.setLevel(logging.DEBUG)
+		logApp = logging.getLogger("tornado.application")
+		logApp.addHandler(handler)
+
+		handlerErr = logging.FileHandler(os.path.join(root_dir,"serverErr.log"))
+		loggerErr = logging.getLogger()
+		loggerErr.setLevel(logging.DEBUG)
+		logErr = logging.getLogger("tornado.general")
+		logErr.addHandler(handlerErr)
+
+		handlerAcc = logging.FileHandler(os.path.join(root_dir,"serverAcc.log"))
+		loggerAcc = logging.getLogger()
+		loggerAcc.setLevel(logging.DEBUG)
+		logAcc = logging.getLogger("tornado.access")
+		logAcc.addHandler(handlerAcc)
+
+		logging.info("Log is enable")
+	except Exception as e:
+		logging.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Log Exeception occured:{}".format(e))
+	logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"starting server ")
+	# handler = grapy.GELFHandler('host_to_graylog_node', port, localname="name_of_your_app_identifier")
 	application.checkDB()
 	signal.signal(signal.SIGINT, application.signal_handler)
 	application.listen(serverPort)
