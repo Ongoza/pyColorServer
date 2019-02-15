@@ -88,7 +88,8 @@ class Application(tornado.web.Application):
 			userID VARCHAR(40),
 			ipInfo TEXT,
 			lang VARCHAR(10),
-			userDate VARCHAR(250),
+			userDate VARCHAR(30),
+			userZone VARCHAR(200),
 			date datetime,
 			rightObjectsList TEXT,
 			selectedObjectsList TEXT,
@@ -263,12 +264,14 @@ class PutVrData(tornado.web.RequestHandler):
 				email = json_data["userEmail"]
 				lang = json_data["lang"]
 				userDate = json_data["startDateTime"]
+				userZone = json_data["userZone"]
 				date = time.strftime('%Y-%m-%d %H:%M:%S')
 				rightObjectsList = tornado.escape.json_encode(json_data["rightObjectsList"])
 				selectedObjectsList = tornado.escape.json_encode(json_data["selectedObjectsList"])
 				snenasMotionData = tornado.escape.json_encode(json_data["snenasMotionData"])
-				insertStatement = "INSERT INTO "+tableData+" (user,ip,ipInfo,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
-				self.application.db.cursor().execute(insertStatement,(strUser,ip,ipInfo,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
+				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				self.application.db.cursor().execute(
+				insertStatement,(ip,ipInfo,deviceID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
 				logging.info("json_data ok")
 			except Exception as e:
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
