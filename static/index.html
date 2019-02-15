@@ -145,7 +145,7 @@
             fetch('http://api.ipstack.com/check?access_key=f32a4157e76eb9ed5347f0c4869d0c3e&format=1')
       			  .then(response =>{ return response.json();
         			}).then(data=> { json_ip = data;
-                console.log(data);
+                // console.log(data);
         			}).catch( e => { console.log(e);})
             }
   		}
@@ -341,9 +341,10 @@
             answer["result"]["extra"] = curResult["extra"];
             answer["result"]["stabil"] = curResult["stabil"];
             answer["result"]["lying"] = curResult["lying"];
-            answer["IP"] = json_ip;
+            answer["ipInfo"] = json_ip;
+            if(json_ip){ answer["ip"] = json_ip["ip"];}
             answer["lang"] = userLang;
-            console.log(answer);
+            // console.log(answer);
             fetch("putTest", {
                 method : "POST",
                 mode: "cors", // no-cors, cors, *same-origin

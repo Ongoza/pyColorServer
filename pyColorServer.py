@@ -79,7 +79,21 @@ class Application(tornado.web.Application):
 			logApp.info("UserData table exist")
 		except Exception as e:
 			logApp.info("UserData table does not exist. Creating...")
-			self.db.cursor().execute("CREATE TABLE "+tableData+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(70), ip VARCHAR(30), data MEDIUMTEXT, date datetime, PRIMARY KEY (id));")
+			self.db.cursor().execute("CREATE TABLE "+tableData+
+			"""(id int NOT NULL AUTO_INCREMENT,
+			user VARCHAR(40),
+			ip VARCHAR(25),
+			deviceID VARCHAR(70),
+			email VARCHAR(70),
+			userID VARCHAR(40),
+			ipInfo TEXT,
+			lang VARCHAR(10),
+			userDate VARCHAR(250),
+			date datetime,
+			rightObjectsList TEXT,
+			selectedObjectsList TEXT,
+			snenasMotionData MEDIUMTEXT,
+			PRIMARY KEY (id));""")
 			logApp.info("UserData table is created")
 			pass
 		checkUserTestTable = "SELECT COUNT(*)  FROM "+tableTest+";"
@@ -89,7 +103,22 @@ class Application(tornado.web.Application):
 		except Exception as e:
 			logApp.info("TestData table does not exist. Creating...")
 			# CREATE TABLE test_data (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data VARCHAR(255), date datetime, birthDate datetime, PRIMARY KEY (id));
-			self.db.cursor().execute("CREATE TABLE "+tableTest+" (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip TEXT, lang VARCHAR(10),data TEXT, testTime int, date datetime, birthDate date, extra tinyint,stabil tinyint,lying tinyint, PRIMARY KEY (id));")
+			self.db.cursor().execute("CREATE TABLE "+tableTest+
+			""" (id int NOT NULL AUTO_INCREMENT,
+			user VARCHAR(40),
+			userID VARCHAR(40),
+			ip VARCHAR(25),
+			ipInfo TEXT,
+			lang VARCHAR(10),
+			data TEXT,
+			testTime int,
+			email VARCHAR(70),
+			date datetime,
+			birthDate date,
+			extra tinyint,
+			stabil tinyint,
+			lying tinyint,
+			PRIMARY KEY (id));""")
 			logApp.info("testData table is created")
 			pass
 	def signal_handler(self, signum, frame):
@@ -183,11 +212,12 @@ class PutTest(tornado.web.RequestHandler):
 				# strData = "test"
 				# logging.info(strData)
 				#time.strftime('%Y-%m-%d %H:%M:%S')
-				insertStatement = "INSERT INTO "+tableTest+" (user,ip,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				insertStatement = "INSERT INTO "+tableTest+" (user,ip,ipInfo,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
 				logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+insertStatement)
 				strUser = str(json_data["user"])
-				IP = tornado.escape.json_encode(json_data["IP"])
+				ipInfo = tornado.escape.json_encode(json_data["ipInfo"])
 				Extra = json_data["result"]["extra"]
+				ip = json_data["ip"]
 				Stabil = json_data["result"]["stabil"]
 				Lying = json_data["result"]["lying"]
 				strLang = str(json_data["lang"])
@@ -195,7 +225,51 @@ class PutTest(tornado.web.RequestHandler):
 				strTestTime = json_data["testTime"]
 				strTime = time.strftime('%Y-%m-%d %H:%M:%S')
 				# print(tableTest+strUser+strData+strDate+strTime)
-				self.application.db.cursor().execute(insertStatement,(strUser,IP,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
+				self.application.db.cursor().execute(insertStatement,(strUser,ip,ipInfo,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
+			except Exception as e:
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
+				self.post_result = "Error parse JSON"
+				pass
+	def post(self):
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.post_result)
+		# logging.info(self.post_result)
+		self.write(self.post_result)
+	def get(self):
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'user try use get method')
+		# logging.info('user try use get method')
+		self.write("Error!")
+
+class PutVrData(tornado.web.RequestHandler):
+	#wget --post-data="{\"user\":\"user645\",\"data\":\"data445\"}"  "http://localhost:8888/putRecord"
+	def prepare(self):
+		logging.info(PutVrData)
+		json_data = None
+		self.post_result = "Json test post OK"
+		if self.request.body:
+			try:
+				json_data = tornado.escape.json_decode(self.request.body)
+				# logging.info(json_data)
+				#json_data = {"user":"user333","data":"dddddddd fff"}
+			except Exception as e:
+				self.post_result = "Error parse JSON body"
+				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
+				pass
+		if json_data:
+			try:
+				logging.info("json_data ok")
+				ip = json_data["ip"]
+				ipInfo = tornado.escape.json_encode(json_data["ipInfo"])
+				deviceID = json_data["deviceID"]
+				email = json_data["userEmail"]
+				lang = json_data["lang"]
+				userDate = json_data["startDateTime"]
+				date = time.strftime('%Y-%m-%d %H:%M:%S')
+				rightObjectsList = tornado.escape.json_encode(json_data["rightObjectsList"])
+				selectedObjectsList = tornado.escape.json_encode(json_data["selectedObjectsList"])
+				snenasMotionData = tornado.escape.json_encode(json_data["snenasMotionData"])
+				insertStatement = "INSERT INTO "+tableData+" (user,ip,ipInfo,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				self.application.db.cursor().execute(insertStatement,(strUser,ip,ipInfo,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
+				logging.info("json_data ok")
 			except Exception as e:
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
 				self.post_result = "Error parse JSON"
@@ -219,6 +293,7 @@ application = Application([
 	(r"/js/(.*)",tornado.web.StaticFileHandler, {"path": "./static/js"},),
 	(r"/putRecord", PutRecord),
 	(r"/putTest", PutTest),
+	(r"/putVrData", PutVrData),
 	(r"/version", VersionHandler)
 	],
 	debug=True,
@@ -229,7 +304,7 @@ if __name__ == "__main__":
 	tornado.options.parse_command_line()
 	try:
 		tornado.log.enable_pretty_logging()
-		
+
 		handler = logging.FileHandler(os.path.join(root_dir,"server.log"))
 		logger = logging.getLogger()
 		logger.setLevel(logging.DEBUG)
