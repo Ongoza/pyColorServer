@@ -342,10 +342,12 @@
             answer["result"]["stabil"] = curResult["stabil"];
             answer["result"]["lying"] = curResult["lying"];
             answer["ipInfo"] = json_ip;
-            if(json_ip){ answer["ip"] = json_ip["ip"];}
+            if(json_ip){ answer["ip"] = json_ip["ip"];
+            }else{answer["ip"] = "";}
             answer["lang"] = userLang;
             // console.log(answer);
-            fetch("putTest", {
+          //  fetch("http://91.212.177.22:8888/putTest", {
+           fetch("putTest", {
                 method : "POST",
                 mode: "cors", // no-cors, cors, *same-origin
                 cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
@@ -361,7 +363,10 @@
                   // alert(body);
                   showResultCanvas();
               //    location.reload();
-              }).catch(error => console.error('Error:', error));
+            }).catch(error => {
+              console.error('Error:', error);
+              showResultCanvas();
+            });
             }else {alert("Please fill all fields");}
           }else{ showQuestions();}
       }
