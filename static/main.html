@@ -12,29 +12,32 @@
     <script type="text/javascript">
 	var localData = [];
 	function updateData(){
-		fetch('getAllData')
+		fetch('getLastData')
 		  .then(response =>{ return response.json();
 		})
-		  .then(data=> {			   
+		  .then(data=> {
 			   var strData = JSON.stringify(data);
-				   if ( strData !== localData){				   
+         var timer = document.getElementById("timer");
+         var d = new Date();
+         timer.innerHTML = d.toLocaleTimeString();
+         // console.log(strData);
+				  if ( strData !== localData){
 					var tbl = document.getElementById("table");
 					var old = document.getElementById("tbody");
 					if (old){tbl.removeChild(old);}
-					//console.log("update by new data=" + strData);					   
+					console.log("update by new data=" + strData);
 					var tbdy = document.createElement('tbody');
 					tbdy.setAttribute("id", "tbody");
-					data.map(raw =>{
-						var tr = tbl.insertRow();
-						Object.keys(raw).map(cell=>{
-						if (cell!="data"  ){// && cell!="ip" 
+          tbdy.setAttribute("style","font-size: 16px;")
+					var tr = tbl.insertRow();
+					Object.keys(data).map(cell=>{
+            console.log(data[cell])
 							var td = tr.insertCell();
-							if (raw[cell]!=null ){
-								td.appendChild(document.createTextNode(raw[cell]));
-							}}
+							if (data[cell]!=null ){
+								td.appendChild(document.createTextNode(data[cell]));
+							}
 						})
 					tbdy.appendChild(tr);
-				   })			  
 				  tbl.appendChild(tbdy);
 				  localData = strData;
 			  }
@@ -42,28 +45,29 @@
 		  .catch( e => {
 			console.log("fetch went wrong" );
 		})
-	}	
-	window.onload = updateData;	
+	}
+	window.onload = updateData;
 	var x = setInterval(function() {
 		console.log("check for update data");
 		updateData();
-		}, 2000);
-    
+  }, 5000);
+
     </script>
   </head>
   <body>
-    <h1>Color Server Main page</h1>
-	<h2>Last data from devices <img src="images/smiley.gif" alt="Smiley face" height="42" width="42"></h2>
-	<div style="display: flex; justify-content: center;">
-		<table id="table" style="width:60%;" border= "1px">
+	<h2>Last data from server <img src="images/smiley.gif" alt="Smiley face" height="42" width="42"></h2>
+<div id="timer"></div>
+  <div style="display: flex; justify-content: center;">
+		<table id="table" style="width:80%; border-style: solid; font-size: 24px;""  border="1">
 			<thead><tr>
-				<th>ID</th>
-				<th>User</th>
-				<th>Date</th>
-				<th>IP</th>
+				<th>VR ID</th>
+				<th>VR DATE</th>
+        <th>VR Counter</th>
+				<th>Text ID</th>
+				<th>Text Date</th>
+        <th>Text Counter</th>
 			</tr></thead>
 		</table>
 	</div>
-	<div id="timer"></div>
 	</body>
 </html>

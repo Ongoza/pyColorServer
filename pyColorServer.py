@@ -1,8 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# // http://91.212.177.22:8888/js/vrTestEPI_0.9.apk
+# // сделать страницу авторизации по емайл и захода по user_id
+# // https
+# // сделать возможность выбора отображаемых полей  SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_NAME`='user_data';
+# // сделать выборку по
+# //   указанным в запросе полям slect v1,v2 from table;
+# //   количество записей в таблице =  select count(*) from test_data;
+# //   дату последнего допбавления = SELECT id,date FROM user_data ORDER BY id DESC LIMIT 1;
+# //   указанное в запросе количество по id =  WHERE id BETWEEN 100 AND 200;
+
 import signal
 import logging
+import random
 from datetime import date
 
 import tornado.escape
@@ -26,41 +37,8 @@ dbPassword = "11"
 dbName = "colors"
 tableData = "user_data"
 tableTest = "test_data"
+version = "0.8"
 root_dir = os.path.dirname(__file__)
-
-#root = os.path.dirname(__file__)
-#static_path=os.path.join(root, 'static')
-# добавить
-# вход с помощью соц сетей
-# девайс пользователя и есть ли установленный софт
-
-class SQLHandler(tornado.web.RequestHandler):
-	def row_to_obj(self, row, cur):
-		#Convert a SQL row to an object supporting dict and attribute access.
-		obj = tornado.util.ObjectDict()
-		for val, desc in zip(row, cur.description):
-			#print("val="+str(val)+" desc="+ str(desc[0]))
-			obj[desc[0]] = val
-		return obj
-
-	def execute(self, stmt, *args):
-		#Execute a SQL statement.
-		with (self.application.db.cursor()) as cur:
-			cur.execute(stmt, args)
-
-	def query(self, stmt, *args):
-		with (self.application.db.cursor()) as cur:
-			cur.execute(stmt, args)
-		return [self.row_to_obj(row, cur) for row in cur.fetchall()]
-
-	def queryone(self, stmt, *args):
-		#Query for exactly one result.
-		results = self.query(stmt, *args)
-		if len(results) == 0:
-			raise NoResultError()
-		elif len(results) > 1:
-			raise ValueError("Expected 1 result, got %d" % len(results))
-		return results[0]
 
 class Application(tornado.web.Application):
 	is_closing = False
@@ -79,6 +57,7 @@ class Application(tornado.web.Application):
 			logApp.info("UserData table exist")
 		except Exception as e:
 			logApp.info("UserData table does not exist. Creating...")
+			# userID for corresponde between tables
 			self.db.cursor().execute("CREATE TABLE "+tableData+
 			"""(id int NOT NULL AUTO_INCREMENT,
 			user VARCHAR(40),
@@ -90,7 +69,7 @@ class Application(tornado.web.Application):
 			lang VARCHAR(10),
 			userDate VARCHAR(30),
 			userZone VARCHAR(200),
-			date datetime,
+			date DATETIME,
 			rightObjectsList TEXT,
 			selectedObjectsList TEXT,
 			snenasMotionData MEDIUMTEXT,
@@ -103,7 +82,7 @@ class Application(tornado.web.Application):
 			logApp.info("testData table exist")
 		except Exception as e:
 			logApp.info("TestData table does not exist. Creating...")
-			# CREATE TABLE test_data (id int NOT NULL AUTO_INCREMENT, user VARCHAR(40), ip VARCHAR(30), data VARCHAR(255), date datetime, birthDate datetime, PRIMARY KEY (id));
+			# userID from datatable for corresponding between tables
 			self.db.cursor().execute("CREATE TABLE "+tableTest+
 			""" (id int NOT NULL AUTO_INCREMENT,
 			user VARCHAR(40),
@@ -112,13 +91,13 @@ class Application(tornado.web.Application):
 			ipInfo TEXT,
 			lang VARCHAR(10),
 			data TEXT,
-			testTime int,
+			testTime INT,
 			email VARCHAR(70),
-			date datetime,
-			birthDate date,
-			extra tinyint,
-			stabil tinyint,
-			lying tinyint,
+			date DATETIME,
+			birthDate DATE,
+			extra TINYINT,
+			stabil TINYINT,
+			lying TINYINT,
 			PRIMARY KEY (id));""")
 			logApp.info("testData table is created")
 			pass
@@ -146,51 +125,50 @@ class ResultHandler(tornado.web.RequestHandler):
 
 class VersionHandler(tornado.web.RequestHandler):
 	def get(self):
-		response = { 'version': '0.0.1', 'last_build':  date.today().isoformat() }
+		response = { 'version': version }
+		response["id"] = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
 		self.write(response)
 
-class GetByIdHandler(SQLHandler):
-	async  def get(self):
-		id = self.get_argument("id", None)
+class GetByIdHandler(tornado.web.RequestHandler):
+	def get(self,req):
+		# logging.info(self.request.query_arguments)
+		logging.info(req)
+		# logging.info(self.request.remote_ip)
+		# json.dumps({ k: self.get_argument(k) for k in self.request.arguments })
+		# http://localhost:8888/getID/re?ff=230&id=33
 		entry = {}
 		if id:
-			entry = self.queryone("SELECT * FROM "+tableData+" WHERE id = %s", int(id))
-			self.write(json.dumps(entry))
+			# logging.info(self.request)
+			# entry = self.queryone("SELECT * FROM "+tableData+" WHERE id = %s", int(id))
+			self.write("dd")
 
-class GetAllDataHandler(SQLHandler):
-	async  def get(self):
-		recNumber = str(self.get_argument("limit", 10))
-		entries= {}
-		#logging.info("recNumber="+recNumber)
-		if id:
-			entries = self.query("SELECT * FROM "+tableData+" ORDER BY id DESC limit "+recNumber)
-			#logging.info(entries)
-		self.write(json.dumps(entries))
-
-class PutRecord(tornado.web.RequestHandler):
-	#wget --post-data="{\"user\":\"user645\",\"data\":\"data445\"}"  "http://localhost:8888/putRecord"
-	def prepare(self):
-		json_data = None
-		self.post_result = "Json post OK"
-		if self.request.body:
-			try:
-				logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.request.body)
-				json_data = tornado.escape.json_decode(self.request.body)
-				#json_data = {"user":"user333","data":"dddddddd fff"}
-			except Exception as e:
-				self.post_result = "Error decode JSON"
-				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutRecord Json decode Exeception body occured:{}".format(e))
-				pass
-		if json_data:
-			try:
-				#logging.info('start put data to DB')
-				cursorObject = self.application.db.cursor()
-				insertStatement = "INSERT INTO "+tableData+" (user, date, data) VALUES (\""+str(json_data["user"])+"\",\""+time.strftime('%Y-%m-%d %H:%M:%S')+"\",\""+str(json_data["data"])+"\");"
-				logApp.info(insertStatement)
-				cursorObject.execute(insertStatement)
-			except Exception as e:
-				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutRecord Jsom parse Exeception occured:{}".format(e))
-				self.post_result = "Error parse JSON"
+class GetLastDataHandler(tornado.web.RequestHandler):
+	def get(self):
+		try:
+			# logging.info(self.request)
+			answer={}
+			with self.application.db.cursor() as cursor:
+				cursor.execute("SELECT id,date FROM "+tableData+" ORDER BY id DESC LIMIT 1;")
+				res = cursor.fetchone()
+				answer['vr id'] = res[0]
+				answer['vr date'] = str(res[1])
+				print(res[1])
+				cursor.execute("select count(*) from "+tableData)
+				res2 = cursor.fetchone()
+				answer['vr count'] = res2[0]
+				cursor.execute("SELECT id,date FROM "+tableData+" ORDER BY id DESC LIMIT 1;")
+				res3 = cursor.fetchone()
+				answer['text id'] = res3[0]
+				answer['text date'] = str(res3[1])
+				cursor.execute("select count(*) from "+tableTest)
+				res4 = cursor.fetchone()
+				answer['text count'] = res4[0]
+				# print(answer)
+				# print(json.dumps(answer))
+			self.write(json.dumps(answer))
+		except Exception as e:
+			logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"GetAll Exeception occured:{}".format(e))
+			self.write( "Error GetAll")
 
 class PutTest(tornado.web.RequestHandler):
 	#wget --post-data="{\"user\":\"user645\",\"data\":\"data445\"}"  "http://localhost:8888/putRecord"
@@ -201,7 +179,6 @@ class PutTest(tornado.web.RequestHandler):
 			try:
 				# logging.info(self.request.body)
 				json_data = tornado.escape.json_decode(self.request.body)
-				#json_data = {"user":"user333","data":"dddddddd fff"}
 			except Exception as e:
 				self.post_result = "Error parse JSON body"
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
@@ -209,10 +186,7 @@ class PutTest(tornado.web.RequestHandler):
 		if json_data:
 			try:
 				strData = tornado.escape.json_encode(json_data["answers"])
-				# strResult = tornado.escape.json_encode(json_data["result"])
-				# strData = "test"
 				# logging.info(strData)
-				#time.strftime('%Y-%m-%d %H:%M:%S')
 				insertStatement = "INSERT INTO "+tableTest+" (user,ip,ipInfo,lang,data,testTime,date,birthDate,extra,stabil,lying) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
 				logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+insertStatement)
 				strUser = str(json_data["user"])
@@ -241,7 +215,6 @@ class PutTest(tornado.web.RequestHandler):
 		self.write("Error!")
 
 class PutVrData(tornado.web.RequestHandler):
-	#wget --post-data="{\"user\":\"user645\",\"data\":\"data445\"}"  "http://localhost:8888/putRecord"
 	def prepare(self):
 		logging.info(PutVrData)
 		json_data = None
@@ -266,12 +239,13 @@ class PutVrData(tornado.web.RequestHandler):
 				userDate = json_data["startDateTime"]
 				userZone = json_data["userZone"]
 				date = time.strftime('%Y-%m-%d %H:%M:%S')
+				userID = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
 				rightObjectsList = tornado.escape.json_encode(json_data["rightObjectsList"])
 				selectedObjectsList = tornado.escape.json_encode(json_data["selectedObjectsList"])
 				snenasMotionData = tornado.escape.json_encode(json_data["snenasMotionData"])
-				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,userID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
 				self.application.db.cursor().execute(
-				insertStatement,(ip,ipInfo,deviceID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
+				insertStatement,(ip,ipInfo,deviceID,userID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
 				logging.info("json_data ok")
 			except Exception as e:
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
@@ -289,15 +263,15 @@ class PutVrData(tornado.web.RequestHandler):
 application = Application([
 	(r"/", MainHandler),
 	(r"/results", ResultHandler),
-	(r"/getAllData", GetAllDataHandler),
-	(r"/getRecordid/([0-9]+)", GetByIdHandler),
+	(r"/getLastData", GetLastDataHandler),
+	(r"/getID/([^/]+)", GetByIdHandler),
 	(r'/(favicon.ico)', tornado.web.StaticFileHandler, {"path": ""}),
 	(r"/images/(.*)",tornado.web.StaticFileHandler, {"path": "./static/images"},),
 	(r"/js/(.*)",tornado.web.StaticFileHandler, {"path": "./static/js"},),
-	(r"/putRecord", PutRecord),
+	# (r"/putRecord", PutRecord),
 	(r"/putTest", PutTest),
 	(r"/putVrData", PutVrData),
-	(r"/version", VersionHandler)
+	(r"/ver", VersionHandler)
 	],
 	debug=True,
 	static_hash_cache=False
@@ -330,7 +304,6 @@ if __name__ == "__main__":
 	except Exception as e:
 		logging.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Log Exeception occured:{}".format(e))
 	logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"starting server ")
-	# handler = grapy.GELFHandler('host_to_graylog_node', port, localname="name_of_your_app_identifier")
 	application.checkDB()
 	signal.signal(signal.SIGINT, application.signal_handler)
 	application.listen(serverPort)
