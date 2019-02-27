@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+
+# Добавить генерацию письма на почтовый адрес
 # // http://91.212.177.22:8888/js/vrTestEPI_0.9.apk
 # // сделать страницу авторизации по емайл и захода по user_id
 # // https
@@ -64,6 +66,8 @@ class Application(tornado.web.Application):
 			ip VARCHAR(25),
 			deviceID VARCHAR(70),
 			email VARCHAR(70),
+			deviceInfo VARCHAR(250),
+			gyro TINYINT(1),
 			userID VARCHAR(40),
 			ipInfo TEXT,
 			lang VARCHAR(10),
@@ -109,8 +113,9 @@ class Application(tornado.web.Application):
 		if self.is_closing:
 			# clean up here
 			self.db.close()
+			# logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
 			tornado.ioloop.IOLoop.instance().stop()
-			logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
+
 
 class MainHandler(tornado.web.RequestHandler):
 	def get(self):
@@ -126,6 +131,12 @@ class ResultHandler(tornado.web.RequestHandler):
 class VersionHandler(tornado.web.RequestHandler):
 	def get(self):
 		response = { 'version': version }
+		x_real_ip = self.request.headers.get("X-Real-IP")
+		# remote_ip = x_real_ip or self.request.remote_ip
+		# remote_ip = self.request.headers.get('X-Forwarded-For', self.request.headers.get('X-Real-Ip', self.request.remote_ip))
+		# logging.info(remote_ip)
+		remote_ip = str(self.request.headers)
+		response["ip"] = remote_ip
 		response["id"] = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
 		self.write(response)
 
@@ -150,16 +161,23 @@ class GetLastDataHandler(tornado.web.RequestHandler):
 			with self.application.db.cursor() as cursor:
 				cursor.execute("SELECT id,date FROM "+tableData+" ORDER BY id DESC LIMIT 1;")
 				res = cursor.fetchone()
-				answer['vr id'] = res[0]
-				answer['vr date'] = str(res[1])
-				print(res[1])
+				if(res):
+					answer['vr id'] = res[0]
+					answer['vr date'] = str(res[1])
+				else:
+					answer['vr id'] = 0
+					answer['vr date'] = 0
 				cursor.execute("select count(*) from "+tableData)
 				res2 = cursor.fetchone()
 				answer['vr count'] = res2[0]
-				cursor.execute("SELECT id,date FROM "+tableData+" ORDER BY id DESC LIMIT 1;")
+				cursor.execute("SELECT id,date FROM "+tableTest+" ORDER BY id DESC LIMIT 1;")
 				res3 = cursor.fetchone()
-				answer['text id'] = res3[0]
-				answer['text date'] = str(res3[1])
+				if(res3):
+					answer['text id'] = res3[0]
+					answer['text date'] = str(res3[1])
+				else:
+					answer['text id'] = 0
+					answer['text date'] = 0
 				cursor.execute("select count(*) from "+tableTest)
 				res4 = cursor.fetchone()
 				answer['text count'] = res4[0]
@@ -224,6 +242,7 @@ class PutVrData(tornado.web.RequestHandler):
 				json_data = tornado.escape.json_decode(self.request.body)
 				# logging.info(json_data)
 				#json_data = {"user":"user333","data":"dddddddd fff"}
+				# ALTER TABLE user_data ADD deviceInfo VARCHAR(250) AFTER deviceID;
 			except Exception as e:
 				self.post_result = "Error parse JSON body"
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
@@ -234,6 +253,8 @@ class PutVrData(tornado.web.RequestHandler):
 				ip = json_data["ip"]
 				ipInfo = tornado.escape.json_encode(json_data["ipInfo"])
 				deviceID = json_data["deviceID"]
+				deviceInfo = json_data["deviceInfo"]
+				gyro = json_data["gyro"]
 				email = json_data["userEmail"]
 				lang = json_data["lang"]
 				userDate = json_data["startDateTime"]
@@ -243,9 +264,9 @@ class PutVrData(tornado.web.RequestHandler):
 				rightObjectsList = tornado.escape.json_encode(json_data["rightObjectsList"])
 				selectedObjectsList = tornado.escape.json_encode(json_data["selectedObjectsList"])
 				snenasMotionData = tornado.escape.json_encode(json_data["snenasMotionData"])
-				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,userID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,userID,deviceInfo,gyro,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
 				self.application.db.cursor().execute(
-				insertStatement,(ip,ipInfo,deviceID,userID,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
+				insertStatement,(ip,ipInfo,deviceID,userID,deviceInfo,gyro,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
 				logging.info("json_data ok")
 			except Exception as e:
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
