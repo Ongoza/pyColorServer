@@ -11,16 +11,18 @@
     </style>
     <script type="text/javascript">
 	var localData = [];
+  var server = "91.212.177.22:8888"
 	function updateData(){
-		fetch('getLastData')
-		  .then(response =>{ return response.json();
+		fetch("http://"+server+'/getLastData')
+		  .then(response =>{
+        return response.json();
 		})
 		  .then(data=> {
 			   var strData = JSON.stringify(data);
          var timer = document.getElementById("timer");
          var d = new Date();
          timer.innerHTML = d.toLocaleTimeString();
-         // console.log(strData);
+         console.log(strData);
 				  if ( strData !== localData){
 					var tbl = document.getElementById("table");
 					var old = document.getElementById("tbody");
@@ -43,7 +45,7 @@
 			  }
 			  })
 		  .catch( e => {
-			console.log("fetch went wrong" );
+			console.log("fetch went wrong"+e );
 		})
 	}
 	window.onload = updateData;

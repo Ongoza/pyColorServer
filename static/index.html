@@ -6,10 +6,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
-	  <style>.form-inline { display: flex; flex-flow: row wrap;  align-items: center; }</style>
+	  <style>
+      .form-inline { display: flex; flex-flow: row wrap;  align-items: center; }
+      .bigRadio{ width: 1.3em; height: 1.3em; }
+    </style>
 	<meta charset="utf-8">
 	<title>Color Server Main page</title>
     <script type="text/javascript">
+    var server = "91.212.177.22:8888"
       var startTimeQuestion = Date.now(),  curPage = 0, userLangList = ["ru"];
       var startTime = Math.floor(startTimeQuestion / 1000), json_ip, undoButton, userLang, json_questions, curResult = {"extra":0, "stabil":0, "lying":0, "counter":0}, answer = {"answers":{}}, prevQuestion=[];
 // запись возвращение к вопросу
@@ -84,7 +88,7 @@
           var element1 = document.createElement("INPUT");
           element1.type = "radio";
           element1.required = true;
-          element1.className = "form-check-input";
+          element1.className = "form-check-input bigRadio";
           element1.id = "input_"+row[0]+"_yes";
           //element1.name = "input_"+row[0];
           element1.value = "Yes";
@@ -101,7 +105,7 @@
 
           var element2 = document.createElement("INPUT");
           element2.type = "radio";
-          element2.className = "form-check-input";
+          element2.className = "form-check-input bigRadio";
           element2.required = true;
           element2.setAttribute("name", row[0]);
           element2.setAttribute("sign", 0);
@@ -126,8 +130,8 @@
           }
         }
         var json = userLang+".json";
-        // console.log(navigator.language,json);
-  			fetch('js/'+json)
+        console.log(navigator.language,json);
+  			fetch("http://"+server+'/js/'+json)
   			  .then(response =>{
              //console.log(response);
             return response.json();
@@ -206,13 +210,13 @@
          ctx.beginPath();
         // // X
         ctx.moveTo(canvas.width, centerY);
-        ctx.lineTo(canvas.width-arraySize, centerY+arraySize/2);
-        ctx.lineTo(canvas.width-arraySize, centerY-arraySize/2);
+        ctx.lineTo(canvas.width-arraySize, centerY+arraySize/4);
+        ctx.lineTo(canvas.width-arraySize, centerY-arraySize/4);
         ctx.lineTo(canvas.width, centerY);
         // // Y
         ctx.moveTo(centerX,0);
-        ctx.lineTo(centerX - arraySize/2, arraySize);
-        ctx.lineTo(centerX + arraySize/2, arraySize);
+        ctx.lineTo(centerX - arraySize/4, arraySize);
+        ctx.lineTo(centerX + arraySize/4, arraySize);
         ctx.lineTo(centerX,0);
         ctx.fillStyle = "#0000FF";
         ctx.fill();
@@ -348,7 +352,7 @@
             answer["lang"] = userLang;
             // console.log(answer);
           //  fetch("http://91.212.177.22:8888/putTest", {
-           fetch("putTest", {
+           fetch("http://"+server+"/putTest", {
                 method : "POST",
                 mode: "cors", // no-cors, cors, *same-origin
                 cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached

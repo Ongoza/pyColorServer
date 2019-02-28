@@ -34,8 +34,8 @@ serverPort = 8888
 
 # DB connection  parameters
 dbServerName  = "127.0.0.1"
-dbUser = "os"
-dbPassword = "11"
+dbUser = "root"
+dbPassword = "bluher11"
 dbName = "colors"
 tableData = "user_data"
 tableTest = "test_data"
@@ -89,7 +89,7 @@ class Application(tornado.web.Application):
 			# userID from datatable for corresponding between tables
 			self.db.cursor().execute("CREATE TABLE "+tableTest+
 			""" (id int NOT NULL AUTO_INCREMENT,
-			user VARCHAR(40),
+			user VARCHAR(80),
 			userID VARCHAR(40),
 			ip VARCHAR(25),
 			ipInfo TEXT,
@@ -127,6 +127,11 @@ class ResultHandler(tornado.web.RequestHandler):
 	def get(self):
 		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'get main')
 		self.render(os.path.join("static","main.html"))
+
+class ShowResultHandler(tornado.web.RequestHandler):
+	def get(self):
+		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'get main')
+		self.render(os.path.join("static","showResults.html"))
 
 class VersionHandler(tornado.web.RequestHandler):
 	def get(self):
@@ -186,7 +191,7 @@ class GetLastDataHandler(tornado.web.RequestHandler):
 			self.write(json.dumps(answer))
 		except Exception as e:
 			logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"GetAll Exeception occured:{}".format(e))
-			self.write( "Error GetAll")
+			self.write( '{"error":'+"GetAll Exeception occured:{}".format(e)+'}')
 
 class PutTest(tornado.web.RequestHandler):
 	#wget --post-data="{\"user\":\"user645\",\"data\":\"data445\"}"  "http://localhost:8888/putRecord"
@@ -221,7 +226,7 @@ class PutTest(tornado.web.RequestHandler):
 				self.application.db.cursor().execute(insertStatement,(strUser,ip,ipInfo,strLang,strData,strTestTime,strTime,strDate,Extra,Stabil,Lying))
 			except Exception as e:
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
-				self.post_result = "Error parse JSON"
+				self.post_result = '{"error":"Error parse json!"}'
 				pass
 	def post(self):
 		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.post_result)
@@ -230,7 +235,12 @@ class PutTest(tornado.web.RequestHandler):
 	def get(self):
 		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'user try use get method')
 		# logging.info('user try use get method')
-		self.write("Error!")
+		self.write('{"error":"Error!"}')
+
+class NotFoundHandler(tornado.web.RequestHandler):
+	def get(self):
+		logging.info(self.request.body)
+		self.write('{"error":"404"}')
 
 class PutVrData(tornado.web.RequestHandler):
 	def prepare(self):
@@ -253,8 +263,8 @@ class PutVrData(tornado.web.RequestHandler):
 				ip = json_data["ip"]
 				ipInfo = tornado.escape.json_encode(json_data["ipInfo"])
 				deviceID = json_data["deviceID"]
-				deviceInfo = json_data["deviceInfo"]
-				gyro = json_data["gyro"]
+				deviceInfo =""# json_data["deviceInfo"]
+				gyro = 1# json_data["gyro"]
 				email = json_data["userEmail"]
 				lang = json_data["lang"]
 				userDate = json_data["startDateTime"]
@@ -284,15 +294,17 @@ class PutVrData(tornado.web.RequestHandler):
 application = Application([
 	(r"/", MainHandler),
 	(r"/results", ResultHandler),
+	(r"/showResults", ShowResultHandler),
 	(r"/getLastData", GetLastDataHandler),
 	(r"/getID/([^/]+)", GetByIdHandler),
 	(r'/(favicon.ico)', tornado.web.StaticFileHandler, {"path": ""}),
-	(r"/images/(.*)",tornado.web.StaticFileHandler, {"path": "./static/images"},),
-	(r"/js/(.*)",tornado.web.StaticFileHandler, {"path": "./static/js"},),
+	(r"/images/(.*)",tornado.web.StaticFileHandler, {"path": "static/images"},),
+	(r"/js/(.*)",tornado.web.StaticFileHandler, {"path": "static/js"},),
 	# (r"/putRecord", PutRecord),
 	(r"/putTest", PutTest),
 	(r"/putVrData", PutVrData),
-	(r"/ver", VersionHandler)
+	(r"/ver", VersionHandler),
+	(r"/.*", NotFoundHandler),
 	],
 	debug=True,
 	static_hash_cache=False
