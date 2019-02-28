@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
+	  <style>
+      .form-inline { display: flex; flex-flow: row wrap;  align-items: center; }
+      .bigRadio{ width: 1.3em; height: 1.3em; }
+    </style>
+	<meta charset="utf-8">
+	<title>Color Server Main page</title>
+    <script type="text/javascript">
+      var userLang = ["ru"], curResult ={},server = "91.212.177.22:8888";
+
+      function getData(){
+        if(!userLang){
+          if(userLangList.includes(navigator.language)){
+            userLang = navigator.language;
+          }else{
+            userLang = userLangList[0];
+          }
+        }
+        var json = userLang+".json";
+        console.log(navigator.language,json);
+        fetch("http://"+server+'/js/'+json)
+          .then(response =>{
+             //console.log(response);
+            return response.json();
+          }).then(data=> {
+              json_questions = data;
+              showResultCanvas();
+          }).catch( e => {
+            console.log(e);
+          });
+      }
+
+      function showResultCanvas(){
+        var curResult = window.location.search.substring(1).split("&");
+      //  console.log("start draw" );
+        var extra = curResult[0].split("=")[1], stabil = curResult[1].split("=")[1];
+        var cardTitle = document.getElementById("cardTitle");
+        cardTitle.innerText = json_questions["resultTitle"];
+        var mainForm = document.getElementById("questionForm");
+        var result = document.createElement('div');
+        result.id = "CanvasResult";
+        var canvas = document.createElement('canvas');
+        canvas.id = "Canvas";
+        canvas.width = 600;
+        canvas.height = 600;
+        canvas.style.zIndex = 8;
+        //canvas.style.position = "absolute";
+        canvas.style.border = "1px solid";
+        var ctx = canvas.getContext("2d");
+        var offset = canvas.height/6, offsetLabel = canvas.height/4.5;
+        var width = canvas.width-offset, height = canvas.height-offset ;
+        var radius = height/2, centerX=canvas.width/2, centerY=canvas.height/2;
+        var userRadius = radius*0.05, arraySize = width*0.05, userPointX=canvas.width/24*extra, userPointY=canvas.height/24*(24-stabil);
+        // draw circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = "#AAAAAA";
+        ctx.stroke();
+        // draw coordinate lines
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvas.width, centerY);
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, canvas.height);
+        ctx.strokeStyle = "#0000FF";
+        ctx.stroke();
+        // draw arrays
+         ctx.beginPath();
+        // // X
+        ctx.moveTo(canvas.width, centerY);
+        ctx.lineTo(canvas.width-arraySize, centerY+arraySize/4);
+        ctx.lineTo(canvas.width-arraySize, centerY-arraySize/4);
+        ctx.lineTo(canvas.width, centerY);
+        // // Y
+        ctx.moveTo(centerX,0);
+        ctx.lineTo(centerX - arraySize/4, arraySize);
+        ctx.lineTo(centerX + arraySize/4, arraySize);
+        ctx.lineTo(centerX,0);
+        ctx.fillStyle = "#0000FF";
+        ctx.fill();
+
+        // X,Y title
+        ctx.font = "16px Verdana";
+        ctx.fillText(json_questions["answers"]["types"][0], offsetLabel, offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][1], canvas.width-offsetLabel, offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][2], canvas.width-offsetLabel, canvas.height - offsetLabel);
+        ctx.fillText(json_questions["answers"]["types"][3], offsetLabel, canvas.height - offsetLabel);
+        ctx.fillStyle = "#999999";
+        ctx.fillText(json_questions["answers"]["extraмersion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
+        ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
+
+        // draw user data
+        ctx.beginPath();
+        ctx.arc(userPointX, userPointY, userRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = "#FF0000";
+        ctx.fill();
+        // More information link
+        var a = document.createElement('a');
+        var linkText = document.createTextNode(json_questions["link2label"]);
+        a.appendChild(linkText);
+        //a.title = json_questions["link2label"];
+        a.href = json_questions["link2"];
+        var line = document.createElement('div');
+        line.id = "infoLink";
+        line.style = "padding-left:"+offsetLabel+"px"
+        line.appendChild(a);
+        result.appendChild(canvas);
+        result.appendChild(line);
+        mainForm.appendChild(result);
+      }
+      function SwichLang(lang){
+        // console.log(lang);
+        var header = document.getElementById('dropLang');
+        header.innerHTML = '<span class="flag-icon flag-icon-'+lang.toLowerCase()+'"></span>  '+lang+'</a>';
+        userLang = lang.toLowerCase();
+        var mainForm = document.getElementById("questionFormContainer");
+        if(mainForm){mainForm.parentNode.removeChild(mainForm);}
+        var undo = document.getElementById('undoButton');
+        if(undo){ undo.parentNode.removeChild(undo);}
+        var canvas = document.getElementById('CanvasResult');
+        if(canvas){ canvas.parentNode.removeChild(canvas);}
+        getQuestions(curPage);
+      }
+      window.onload = getData();
+  </script>
+  </head>
+  <body>
+    <div style="margin:20px">
+      <div style="float:right;">
+      <div class="dropdown">
+        <a class="dropdown-toggle" id="dropLang" data-toggle="dropdown" href="#" >
+          <span class="flag-icon flag-icon-ru"></span>  Ру</a>
+        <div class="dropdown-menu" aria-labelledby="dropLang">
+            <a class="dropdown-item" href="#" onclick="SwichLang('Ru'); return false;"><span class="flag-icon flag-icon-ru"> </span>  Ru</a>
+            <a class="dropdown-item" href="#" onclick="SwichLang('Ua'); return false;"><span class="flag-icon flag-icon-ua"> </span>  Ua</a>
+            <a class="dropdown-item" href="#" onclick="SwichLang('en'); return false;"><span class="flag-icon flag-icon-us"> </span>  En</a>
+            <a class="dropdown-item" href="#" onclick="SwichLang('pl'); return false;"><span class="flag-icon flag-icon-pl"> </span>  Pl</a>
+        </div>
+        </div>
+      </div>
+    <h1 id="head"></h1>
+    <form>
+        <div class="card">
+           <h5 class="card-title" id="cardTitle"></h5>
+            <div class="container-fluid">
+             <div class="card-body" id="questionForm">
+           </div>
+          </div>
+        </div>
+       </form>
+       </div>
+  </body>
+</html>
