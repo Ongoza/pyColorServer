@@ -13,9 +13,10 @@
 	<meta charset="utf-8">
 	<title>Color Server Main page</title>
     <script type="text/javascript">
-    var server = "91.212.177.22:8888"
-      var startTimeQuestion = Date.now(),  curPage = 0, userLangList = ["ru"];
-      var startTime = Math.floor(startTimeQuestion / 1000), json_ip, undoButton, userLang, json_questions, curResult = {"extra":0, "stabil":0, "lying":0, "counter":0}, answer = {"answers":{}}, prevQuestion=[];
+    //var server = "91.212.177.22:8888"
+    var server = "127.0.0.1:8888"
+    var startTimeQuestion = Date.now(),  curPage = 0, userLangList = ["ru"];
+    var startTime = Math.floor(startTimeQuestion / 1000), json_ip, undoButton, userLang, json_questions, curResult = {"extra":0, "stabil":0, "lying":0, "counter":0}, answer = {"answers":{}}, prevQuestion=[];
 // запись возвращение к вопросу
 // Проверить тест на корректность оценки!!!у
 
@@ -228,7 +229,7 @@
         ctx.fillText(json_questions["answers"]["types"][2], canvas.width-offsetLabel, canvas.height - offsetLabel);
         ctx.fillText(json_questions["answers"]["types"][3], offsetLabel, canvas.height - offsetLabel);
         ctx.fillStyle = "#999999";
-        ctx.fillText(json_questions["answers"]["extraмersion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
+        ctx.fillText(json_questions["answers"]["extraversion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
         ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
 
         // draw user data
@@ -282,12 +283,12 @@
         startTimeQuestion = Date.now();
         var type;
         if(key.getAttribute("sign")=="1"){
-          if(json_questions["answers"]["extraмersion"]["+"].includes(id)){ type = "extra"; curResult["extra"]++;}
+          if(json_questions["answers"]["extraversion"]["+"].includes(id)){ type = "extra"; curResult["extra"]++;}
           if(json_questions["answers"]["neuroticism"]["+"].includes(id)){type = "stabil"; curResult["stabil"]++;}
           if(json_questions["answers"]["lying"]["+"].includes(id)){type = "lying"; curResult["lying"]++;}
           answer["answers"][name]=[1,time];
         }else{
-          if(json_questions["answers"]["extraмersion"]["-"].includes(id)){type = "extra"; curResult["extra"]++;}
+          if(json_questions["answers"]["extraversion"]["-"].includes(id)){type = "extra"; curResult["extra"]++;}
           if(json_questions["answers"]["lying"]["-"].includes(id)){type = "lying"; curResult["lying"]++;}
           answer["answers"][name]=[0,time];
         }
@@ -351,7 +352,6 @@
             }else{answer["ip"] = "";}
             answer["lang"] = userLang;
             // console.log(answer);
-          //  fetch("http://91.212.177.22:8888/putTest", {
            fetch("http://"+server+"/putTest", {
                 method : "POST",
                 mode: "cors", // no-cors, cors, *same-origin

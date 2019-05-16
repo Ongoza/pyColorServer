@@ -34,77 +34,91 @@ serverPort = 8888
 
 # DB connection  parameters
 dbServerName  = "127.0.0.1"
-dbUser = "root"
-dbPassword = "bluher11"
+dbUser = "os"
+dbPassword = "11"
 dbName = "colors"
 tableData = "user_data"
 tableTest = "test_data"
-version = "0.8"
+version = "0.9"
 root_dir = os.path.dirname(__file__)
+
+class Object(object):
+    pass
 
 class Application(tornado.web.Application):
 	is_closing = False
 	db = None
 
 	def checkDB(self):
+
 		try:
 			self.db = pymysql.connect(host=dbServerName, user=dbUser, password=dbPassword, db=dbName,autocommit=True)
 			logApp.info("DB exist")
+			checkUserDataTable = "SELECT COUNT(*) FROM "+tableData+";"
+			try:
+				self.db.cursor().execute(checkUserDataTable)
+				logApp.info("UserData table exist")
+			except Exception as e:
+				logApp.info("UserData table does not exist. Creating...")
+				# userID for corresponde between tables
+				self.db.cursor().execute("CREATE TABLE "+tableData+
+				"""(id int NOT NULL AUTO_INCREMENT,
+				user VARCHAR(40),
+				ip VARCHAR(25),
+				deviceID VARCHAR(70),
+				email VARCHAR(70),
+				deviceInfo VARCHAR(250),
+				gyro VARCHAR(1),
+				userID VARCHAR(40),
+				ipInfo TEXT,
+				lang VARCHAR(10),
+				userStartTime VARCHAR(30),
+				zone VARCHAR(200),
+				date DATETIME,
+				txtVersion VARCHAR(6),
+				input VARCHAR(6),
+				birth VARCHAR(30),
+				gender VARCHAR(6),
+				extra VARCHAR(2),
+				stabil VARCHAR(2),
+				rightObjectsList TEXT,
+				selectedObjectsList TEXT,
+				snenasMotionData MEDIUMTEXT,
+				colorTestResult TEXT,
+				textTestResult TEXT,
+				PRIMARY KEY (id));""")
+				logApp.info("UserData table is created")
+				pass
+			checkUserTestTable = "SELECT COUNT(*)  FROM "+tableTest+";"
+			try:
+				self.db.cursor().execute(checkUserTestTable)
+				logApp.info("testData table exist")
+			except Exception as e:
+				logApp.info("TestData table does not exist. Creating...")
+				# userID from datatable for corresponding between tables
+				self.db.cursor().execute("CREATE TABLE "+tableTest+
+				""" (id int NOT NULL AUTO_INCREMENT,
+				user VARCHAR(80),
+				userID VARCHAR(40),
+				ip VARCHAR(25),
+				ipInfo TEXT,
+				lang VARCHAR(10),
+				data TEXT,
+				testTime INT,
+				email VARCHAR(70),
+				date DATETIME,
+				birthDate DATE,
+				extra TINYINT,
+				stabil TINYINT,
+				lying TINYINT,
+				PRIMARY KEY (id));""")
+				logApp.info("testData table is created")
 		except Exception as e:
-			logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Exeception DB occured:{}".format(e))
-			pass
-		checkUserDataTable = "SELECT COUNT(*) FROM "+tableData+";"
-		try:
-			self.db.cursor().execute(checkUserDataTable)
-			logApp.info("UserData table exist")
-		except Exception as e:
-			logApp.info("UserData table does not exist. Creating...")
-			# userID for corresponde between tables
-			self.db.cursor().execute("CREATE TABLE "+tableData+
-			"""(id int NOT NULL AUTO_INCREMENT,
-			user VARCHAR(40),
-			ip VARCHAR(25),
-			deviceID VARCHAR(70),
-			email VARCHAR(70),
-			deviceInfo VARCHAR(250),
-			gyro TINYINT(1),
-			userID VARCHAR(40),
-			ipInfo TEXT,
-			lang VARCHAR(10),
-			userDate VARCHAR(30),
-			userZone VARCHAR(200),
-			date DATETIME,
-			rightObjectsList TEXT,
-			selectedObjectsList TEXT,
-			snenasMotionData MEDIUMTEXT,
-			PRIMARY KEY (id));""")
-			logApp.info("UserData table is created")
-			pass
-		checkUserTestTable = "SELECT COUNT(*)  FROM "+tableTest+";"
-		try:
-			self.db.cursor().execute(checkUserTestTable)
-			logApp.info("testData table exist")
-		except Exception as e:
-			logApp.info("TestData table does not exist. Creating...")
-			# userID from datatable for corresponding between tables
-			self.db.cursor().execute("CREATE TABLE "+tableTest+
-			""" (id int NOT NULL AUTO_INCREMENT,
-			user VARCHAR(80),
-			userID VARCHAR(40),
-			ip VARCHAR(25),
-			ipInfo TEXT,
-			lang VARCHAR(10),
-			data TEXT,
-			testTime INT,
-			email VARCHAR(70),
-			date DATETIME,
-			birthDate DATE,
-			extra TINYINT,
-			stabil TINYINT,
-			lying TINYINT,
-			PRIMARY KEY (id));""")
-			logApp.info("testData table is created")
-			pass
+			logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Can not connect to DB server")
+			logErr.error("Exeception DB occured:{}".format(e))
+			logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
+			tornado.ioloop.IOLoop.instance().stop()
+
 	def signal_handler(self, signum, frame):
 		logApp.info("exiting...")
 		self.is_closing = True
@@ -113,7 +127,7 @@ class Application(tornado.web.Application):
 		if self.is_closing:
 			# clean up here
 			self.db.close()
-			# logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
+			logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
 			tornado.ioloop.IOLoop.instance().stop()
 
 
@@ -237,14 +251,9 @@ class PutTest(tornado.web.RequestHandler):
 		# logging.info('user try use get method')
 		self.write('{"error":"Error!"}')
 
-class NotFoundHandler(tornado.web.RequestHandler):
-	def get(self):
-		logging.info(self.request.body)
-		self.write('{"error":"404"}')
-
 class PutVrData(tornado.web.RequestHandler):
 	def prepare(self):
-		logging.info(PutVrData)
+		logging.info("PutVrData")
 		json_data = None
 		self.post_result = "Json test post OK"
 		if self.request.body:
@@ -256,32 +265,39 @@ class PutVrData(tornado.web.RequestHandler):
 			except Exception as e:
 				self.post_result = "Error parse JSON body"
 				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
-				pass
 		if json_data:
-			try:
-				logging.info("json_data ok")
-				ip = json_data["ip"]
-				ipInfo = tornado.escape.json_encode(json_data["ipInfo"])
-				deviceID = json_data["deviceID"]
-				deviceInfo =""# json_data["deviceInfo"]
-				gyro = 1# json_data["gyro"]
-				email = json_data["userEmail"]
-				lang = json_data["lang"]
-				userDate = json_data["startDateTime"]
-				userZone = json_data["userZone"]
-				date = time.strftime('%Y-%m-%d %H:%M:%S')
-				userID = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
-				rightObjectsList = tornado.escape.json_encode(json_data["rightObjectsList"])
-				selectedObjectsList = tornado.escape.json_encode(json_data["selectedObjectsList"])
-				snenasMotionData = tornado.escape.json_encode(json_data["snenasMotionData"])
-				insertStatement = "INSERT INTO "+tableData+" (ip,ipInfo,deviceID,userID,deviceInfo,gyro,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
-				self.application.db.cursor().execute(
-				insertStatement,(ip,ipInfo,deviceID,userID,deviceInfo,gyro,email,lang,userDate,userZone,date,rightObjectsList,selectedObjectsList,snenasMotionData))
-				logging.info("json_data ok")
-			except Exception as e:
-				logErr.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"PutTest JSON Parse Exeception occured:{}".format(e))
-				self.post_result = "Error parse JSON"
-				pass
+				#logging.info("json_data start")
+				dataListStr = ["ip","deviceID","deviceInfo","gyro","email","lang","zone","txtVersion","input","gender","birth"]
+				dataListObj = ["ipInfo","textTestResult","colorTestResult","rightObjectsList","selectedObjectsList","snenasMotionData"]
+				data = {}
+				for i in range(len(dataListStr)):
+					try:
+						data[dataListStr[i]] = str(json_data["userData"][dataListStr[i]])
+					except  Exception as e:
+						data[dataListStr[i]] = ""
+						logging.error("can not parse "+dataListStr[i])
+				# print(json.dumps(data))
+				for i in range(len(dataListObj)):
+					try:
+						data[dataListObj[i]] = tornado.escape.json_encode(json_data[dataListObj[i]])
+					except Exception as e:
+						data[dataListStr[i]] = ""
+						logging.error("can not parse "+dataListObj[i])
+				data["date"] = time.strftime('%Y-%m-%d %H:%M:%S')
+				try:
+					data["userStartTime"] = str(json_data["userStartTime"])
+				except Exception as e:
+					data["userStartTime"] = str(data["date"])
+				data["userID"] = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
+				#print(json.dumps(data))
+				placeholders = ', '.join(['%s'] * len(data))
+				columns = ', '.join(data.keys())
+				values = list(data.values())
+				sql = "INSERT INTO %s ( %s ) VALUES ( %s )" % (tableData, columns, placeholders)
+				self.application.db.cursor().execute( sql, values)
+				#insertStatement,(ip,ipInfo,deviceID,userID,deviceInfo,gyro,email,lang,userDate,userZone,date,txtVersion,Input,Gender,Birth,rightObjectsList,selectedObjectsList,snenasMotionData))
+				#logging.info("json_data ok")
+				self.post_result = "Parsed ok"
 	def post(self):
 		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.post_result)
 		# logging.info(self.post_result)
@@ -289,7 +305,13 @@ class PutVrData(tornado.web.RequestHandler):
 	def get(self):
 		logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+'user try use get method')
 		# logging.info('user try use get method')
-		self.write("Error!")
+		self.write("Error!!!")
+
+
+class NotFoundHandler(tornado.web.RequestHandler):
+	def get(self):
+		logging.info(self.request.body)
+		self.write('{"error":"404"}')
 
 application = Application([
 	(r"/", MainHandler),
@@ -336,7 +358,7 @@ if __name__ == "__main__":
 		logging.info("Log is enable")
 	except Exception as e:
 		logging.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Log Exeception occured:{}".format(e))
-	logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"starting server ")
+	logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"starting server on port "+str(serverPort))
 	application.checkDB()
 	signal.signal(signal.SIGINT, application.signal_handler)
 	application.listen(serverPort)
