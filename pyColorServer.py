@@ -39,8 +39,18 @@ dbPassword = "11"
 dbName = "colors"
 tableData = "user_data"
 tableTest = "test_data"
-version = "0.9"
+version = "0.99"
 root_dir = os.path.dirname(__file__)
+data_dir = os.path.join(root_dir,"data")
+# Create target Directory if don't exist
+if not os.path.exists(data_dir):
+    try:
+        os.mkdir(data_dir)
+        print("Directory " , os.path.abspath(data_dir) ,  " Created ")
+    except Exception as e:
+        print("Error create Directory " , os.path.abspath(data_dir))
+else:
+    print("Directory " , os.path.abspath(data_dir) ,  " Exist")
 
 class Object(object):
     pass
@@ -125,8 +135,8 @@ class Application(tornado.web.Application):
 
 	def try_exit(self):
 		if self.is_closing:
-			# clean up here
-			self.db.close()
+            #if self.db:
+            #    self.db.close()
 			logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"exit success")
 			tornado.ioloop.IOLoop.instance().stop()
 
@@ -252,8 +262,27 @@ class PutTest(tornado.web.RequestHandler):
 		self.write('{"error":"Error!"}')
 
 class PutVrData(tornado.web.RequestHandler):
+    def prepare(self):
+        logging.info("PutVrData")
+        if self.request.body:
+            try:
+                logging.info("PutVrData 1")
+                name = "".join(random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") for _ in range(24))
+                dstFile = os.path.join(data_dir,name)
+                with open(dstFile, 'wb') as file:
+                    file.write(self.request.body)
+                self.post_result = "Parsed ok "+dstFile
+                #pass
+            except Exception as e:
+                self.post_result = "Error parse JSON body"
+                logErr.error(time.strftime('%Y-%m-%d %H:%M:%S')+"PutTest JSON Decode Exeception body occured:{}".format(e))
+    def post(self):
+        logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+self.post_result)
+        self.write(self.post_result)
+
+class PutVrData2(tornado.web.RequestHandler):
 	def prepare(self):
-		logging.info("PutVrData")
+		logging.info("PutVrData2")
 		json_data = None
 		self.post_result = "Json test post OK"
 		if self.request.body:
@@ -315,16 +344,17 @@ class NotFoundHandler(tornado.web.RequestHandler):
 
 application = Application([
 	(r"/", MainHandler),
-	(r"/results", ResultHandler),
+	#(r"/results", ResultHandler),
 	(r"/showResults", ShowResultHandler),
-	(r"/getLastData", GetLastDataHandler),
-	(r"/getID/([^/]+)", GetByIdHandler),
+	#(r"/getLastData", GetLastDataHandler),
+	#(r"/getID/([^/]+)", GetByIdHandler),
 	(r'/(favicon.ico)', tornado.web.StaticFileHandler, {"path": ""}),
 	(r"/images/(.*)",tornado.web.StaticFileHandler, {"path": "static/images"},),
 	(r"/js/(.*)",tornado.web.StaticFileHandler, {"path": "static/js"},),
 	# (r"/putRecord", PutRecord),
-	(r"/putTest", PutTest),
+	#(r"/putTest", PutTest),
 	(r"/putVrData", PutVrData),
+    #(r"/putVrData2", PutVrData2),
 	(r"/ver", VersionHandler),
 	(r"/.*", NotFoundHandler),
 	],
@@ -359,7 +389,7 @@ if __name__ == "__main__":
 	except Exception as e:
 		logging.error(time.strftime('%Y-%m-%d %H:%M:%S ')+"Log Exeception occured:{}".format(e))
 	logApp.info(time.strftime('%Y-%m-%d %H:%M:%S ')+"starting server on port "+str(serverPort))
-	application.checkDB()
+	#application.checkDB()
 	signal.signal(signal.SIGINT, application.signal_handler)
 	application.listen(serverPort)
 	tornado.ioloop.PeriodicCallback(application.try_exit, 100).start()

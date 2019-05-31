@@ -32,6 +32,7 @@
             return response.json();
           }).then(data=> {
               json_questions = data;
+              //console.log(data);
               showResultCanvas();
           }).catch( e => {
             console.log(e);
@@ -40,7 +41,7 @@
 
       function showResultCanvas(){
         var curResult = window.location.search.substring(1).split("&");
-      //  console.log("start draw" );
+        console.log("start draw" );
         var extra = curResult[0].split("=")[1], stabil = curResult[1].split("=")[1];
         var cardTitle = document.getElementById("cardTitle");
         cardTitle.innerText = json_questions["resultTitle"];
@@ -86,7 +87,7 @@
         ctx.lineTo(centerX,0);
         ctx.fillStyle = "#0000FF";
         ctx.fill();
-
+        console.log("start draw 2" );
         // X,Y title
         ctx.font = "16px Verdana";
         ctx.fillText(json_questions["answers"]["types"][0], offsetLabel, offsetLabel);
@@ -94,7 +95,8 @@
         ctx.fillText(json_questions["answers"]["types"][2], canvas.width-offsetLabel, canvas.height - offsetLabel);
         ctx.fillText(json_questions["answers"]["types"][3], offsetLabel, canvas.height - offsetLabel);
         ctx.fillStyle = "#999999";
-        ctx.fillText(json_questions["answers"]["extraмersion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
+        console.log("start draw 3" );
+        ctx.fillText(json_questions["answers"]["extraversion"]["title"], canvas.width-offsetLabel, centerY + arraySize );
         ctx.fillText(json_questions["answers"]["neuroticism"]["title"], centerX - offsetLabel, 40);
 
         // draw user data
